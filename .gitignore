@@ -39,4 +39,4 @@ Thumbs.db
 # Directories #
 ###############
 /petroPy.egg-info/*
-/obsolete/*
+/petroPy/obsolete/*
