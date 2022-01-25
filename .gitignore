@@ -40,3 +40,4 @@ Thumbs.db
 ###############
 petroPy.egg-info/
 old/
+**/__pycache__
