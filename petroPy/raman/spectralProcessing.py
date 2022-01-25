@@ -17,19 +17,9 @@ class RamanProcessing:
 		self.BC = False # flag to check if baseline correction has been used
 		self.norm = False # flag to check if normalisation has been used
 		self.smoothing = False # flag to check if smoothing has been used
-		self.spectrumSelect = 'raw'
-			
+		self.spectrumSelect = 'raw'		
 
-	# def baselineCorrect(self, birs, method = 'gcvspline', s = 0.001):
-	# 	# Baseline correction with general cross-validated splines
-	# 	# For n interpolation regions birs has to be a numpy array with shape (n,2), where each row is [lower_limit, upper_limit]
-	# 	if self.norm == 2:
-	# 		warn('run normalisation again to normalise baseline corrected spectrum')
-	# 	spectrum = self.intensities[self.spectrumSelect]
-	# 	self.intensities['BC'], self.baseline = blcorrect(x_input = self.x, y_input = spectrum, bir = birs, method = method, s = s)
-	# 	self.intensities['BC'], self.baseline = self.intensities['BC'].reshape(-1), self.baseline.reshape(-1)
-	# 	self.BC = 3
-	# 	self.spectrumSelect = intensityDict[self.BC + self.norm]
+
 
 	def smooth(self, smoothType = 'gaussian', kernelWidth = 9, **kwargs):
 		"""
@@ -314,11 +304,11 @@ class H2O(RamanProcessing):
 		bounds = (leftBound, rightBound)
 
 		def curveComposeWrapper(x, params, peakAmount):
-		    """Reshape parameters to use composeCurves in least-squares regression"""
-
-		    values = params.reshape((4, peakAmount))
-
-		    return sf.composeCurves(x, *values)
+			"""Reshape parameters to use composeCurves in least-squares regression"""
+			
+			values = params.reshape((4, peakAmount))
+			
+			return sf.composeCurves(x, *values)
 
 		#Fit peaks
 		residuals = lambda params, x, peakAmount, spectrum: curveComposeWrapper(x, params, peakAmount) - olivine
@@ -374,9 +364,11 @@ class olivine(H2O):
 		bounds = (leftBound, rightBound)
 
 		def curveComposeWrapper(x, params, peakAmount):
-		    """Reshape parameters to use composeCurves in least-squares regression"""
-		    values = params.reshape((4, peakAmount))
-		    return sf.composeCurves(x, *values)
+			"""Reshape parameters to use composeCurves in least-squares regression"""
+			
+			values = params.reshape((4, peakAmount))
+			
+			return sf.composeCurves(x, *values)
 
 		#Least cost function
 		residuals = lambda params, x, peakAmount, spectrum: curveComposeWrapper(x, params, peakAmount) - spectrum

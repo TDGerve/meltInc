@@ -143,14 +143,14 @@ def landauhppressure(phase, pkbar, t):
     q02 = np.sqrt(1 - 298.15/tc0)
     tc = tc0 + pkbar * vmax / smax
     if (tc-t) > 0:
-	    q2 = np.sqrt((tc - t) / tc0)
+        q2 = np.sqrt((tc - t) / tc0)
     else:
         q2 = 0
     gdistot = smax*(tc0*(q02 - 1/3*q02**3 + 1/3*q2**3) -
                     tc*q2 - t*(q02 - q2)) + pkbar*vmax*q02
     tc = tc0 + pkbar * 0 / smax
     if (tc-t) > 0:
-	    q2 = np.sqrt((tc - t) / tc0)
+        q2 = np.sqrt((tc - t) / tc0)
     else:
         q2 = 0
     gdisprind = smax*(tc0*(q02 - 1/3*q02**3 + 1/3*q2**3) -
