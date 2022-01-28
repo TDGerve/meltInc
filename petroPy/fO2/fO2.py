@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.constants import R
 
-def QFMpressure(T_K, Pbar):
+def QFM_pressure(T_K, Pbar):
     
     pgpa= Pbar / 1E4
 
@@ -70,7 +70,7 @@ def phaseTransition(pkbar, t, phase_1, phase_2):
     return results[0] - results[1]
 
 
-def QFM(T_K):
+def QFM_1bar(T_K):
     """
     calculate chemical potential of oxygen (fO2) at QFM a 1 bar. Equation from O'Neill 1987
 
@@ -92,7 +92,7 @@ def QFM(T_K):
     return -587474 + 1584.427 * T_K - 203.3164 * T_K * np.log(T_K) + 0.092710 * T_K**2
 
 
-def fO2QFM(log_units, T_K):
+def fO2QFM(log_units, T_K, Pbar):
     """
     calculate oxygen fugacity at QFM offset by arbitraty log units. 
 
@@ -111,10 +111,10 @@ def fO2QFM(log_units, T_K):
 
     offset = 10**log_units
 
-    return np.exp(QFM(T_K) / (R * T_K)) * offset
+    return np.exp((QFM_1bar(T_K) + QFM_pressure(T_K, Pbar)) / (R * T_K)) * offset
 
 
-def FeRedox(composition, T_K, LNfO2, P_Pa):
+def FeRedox(composition, T_K, fO2, P_Pa):
     """
     Calculate Fe-redox equilibrium for silicate liquids according to equation 7 from Kress and Carmichael (1991).
 
@@ -135,6 +135,9 @@ def FeRedox(composition, T_K, LNfO2, P_Pa):
     Fe3+/Fe2+ ratio in the liquid
 
     """
+
+    LNfO2 = np.log(fO2)
+
     components = ['Al2O3', 'FeO', 'CaO', 'Na2O', 'K2O']
 
     # Parameters from table 7

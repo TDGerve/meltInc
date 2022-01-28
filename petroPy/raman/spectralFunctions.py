@@ -18,11 +18,7 @@ from importlib import resources
 def gaussian(x, amplitude, center, width, baselevel= 0):
     
     return amplitude*np.exp(-(x-center)**2/(2*width**2)) + baselevel
-    # s= width
-    """center= 0
-    width= kernelWidth
-    """
-    # return 1./np.sqrt( 2. * np.pi * s**2 ) * np.exp( -x**2 / ( 2. * s**2 ) )
+
 
 
 def lorentzian(x, amplitude, center, width, baselevel= 0):
