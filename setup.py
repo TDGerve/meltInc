@@ -18,7 +18,6 @@ setuptools.setup(
     'matplotlib',
     'numpy',
     'scipy',
-    'csaps',
-    'importlib'
+    'csaps'
     ]
 )
