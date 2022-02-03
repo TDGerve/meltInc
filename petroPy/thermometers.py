@@ -37,9 +37,12 @@ def liquid_putirka(melt, P_bar):
     #convert pressure from bars to GPa
     P_GPa = P_bar / 1E4
 
-    melt_cat = cc.componentFractions(melt, type= 'oxide', normalise ='total')
+    melt_mol = cc.componentFractions(melt, type= 'oxide', normalise= 'total')
 
-    return -583 + 3141 * melt_cat['SiO2'] + 15779 * melt_cat['Al2O3'] + 1338.6 * melt_cat['MgO'] - 31440 * melt_cat['SiO2'] * melt_cat['Al2O3'] + 77.67 * P_GPa
+    part_1 = -583 + 3141 * melt_mol['SiO2'] + 15779 * melt_mol['Al2O3'] + 1338.6 * melt_mol['MgO']
+    part_2 = - 31440 * melt_mol['SiO2'] * melt_mol['Al2O3'] + 77.67 * P_GPa
+
+    return part_1 + part_2 + 273.15
 
 
 def olivine_putirka(olivine, melt, P_bar, H2O = 0):
@@ -88,7 +91,11 @@ def olivine_putirka(olivine, melt, P_bar, H2O = 0):
     
     NF_components = ['SiO2', 'NaO', 'K2O', 'TiO2']
     C_NF = melt_cat.loc[:,[l for l in NF_components if l in melt_cat.columns]].sum(axis = 1)
+
+    part_1 = 15294.6+1318.8*P_GPa + 2.4834*P_GPa**2.
+    part_2 = 8.048 + 2.8352*np.log(D_Mg) + 2.097*np.log(1.5*C_NM)
+    part_3 = 1.41*C_NF + 0.222*H2O + 0.5*P_GPa
     
-    return (15294.6+1318.8*P_GPa + 2.4834*P_GPa**2.) / (8.048 + 2.8352*np.log(D_Mg) + 2.097*np.log(1.5*C_NM) + 2.575*np.log(3.0*melt_cat['SiO2']) - 1.41*C_NF + 0.222*H2O + 0.5*P_GPa)
+    return (part_1 / (part_2 + part_3)) + 273.15
 
     
