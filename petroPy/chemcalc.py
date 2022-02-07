@@ -137,6 +137,7 @@ def componentFractions(composition, type="oxide", normalise=False, normFactor=No
         or cation - specified in 'type')
     normFactor : int, optional
         amount of oxides or cations to normalise to, e.g. 8 oxygen for plagioclase
+        or 100 for molar concentrations
     elements : list, optional
         elements to use in the calculations
 

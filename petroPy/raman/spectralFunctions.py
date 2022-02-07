@@ -68,7 +68,7 @@ def ShiftToWavelength(shift, laser= 532):
 def neonEmission(laser= 532.27):
     """from https://physics.nist.gov/PhysRefData/Handbook/Tables/neontable2.htm"""
 
-    with resources.open_text('static', 'neon_emissionLines.csv') as df:
+    with resources.open_text('petroPy.static', 'neon_emissionLines.csv') as df:
         neon= pd.read_csv(df)
     
     # neon= pd.read_csv('D:/Dropbox/python/packages/petroPy/neon_emissionLines.csv')
