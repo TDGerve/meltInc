@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
     
+# Colour palettes
 colors = {
     'flatDesign': plt.cycler(color= ['#e27a3d', '#344d5c', '#df5a49', '#43b29d', '#efc94d']), 
     'firenze': plt.cycler(color= ['#8E2800','#468966', '#B64926','#FFF0A5', '#FFB03B']),
@@ -19,6 +20,7 @@ def layout(fontSize= 16, axTitleSize= 16, axLabelSize= 16, tickLabelSize= 12, le
     plt.rcParams['figure.figsize'] = (8, 7)
     plt.rcParams['savefig.dpi'] = 300
 
+    # Text
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.size'] = fontSize
     plt.rcParams['axes.titlesize'] = axTitleSize
@@ -27,18 +29,23 @@ def layout(fontSize= 16, axTitleSize= 16, axLabelSize= 16, tickLabelSize= 12, le
     plt.rcParams['ytick.labelsize'] = tickLabelSize    
     plt.rcParams['legend.fontsize'] = legendFontSize
 
+    # Lines
     plt.rcParams['axes.linewidth'] = 1.5
     plt.rcParams['lines.linewidth'] = 4
 
+    # Markers
     plt.rcParams['lines.markeredgecolor'] = 'k'
     plt.rcParams['lines.markersize'] = 10
 
+    # Colours
     plt.rcParams['axes.prop_cycle'] = colors
     plt.rcParams['axes.facecolor'] = 'whitesmoke' 
 
+    # Background
     plt.rcParams['axes.grid'] = True
     plt.rcParams['grid.color'] = 'snow'
     plt.rcParams['axes.axisbelow'] = True
+    plt.rcParams['figure.facecolor'] = 'white'
 
 
    
