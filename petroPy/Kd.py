@@ -86,23 +86,18 @@ def Kd_ToplisIter(liquid, olivine_Fo, T_K, P, H2O=None):
         melts['H2O'] = H2O
     components = molar_weights.columns.intersection(melts.columns)
 
-    # molar_weights = oxideweights.join(
-    #     pd.DataFrame({"H2O": (1.008 * 2) + 15.999}, index=[0])
-    # )
     ox_fact = (molar_weights["MgO"] / molar_weights["FeO"])[0]
 
-    # calculate melt into molar fractions. Add water if specified. Normalised to measured totals
-    melt_molar = cc.componentFractions(melts)
-    # if H2O:
-    #     melts = melts.join(H2O)
-    #     melt_molar = melt_molar.join(H2O.divide((1.008 * 2 + 15.999)))
-    #     total = melts.loc[:, components].sum(axis=1) + H2O
-    #     components.append("H2O")
-    # else:
+    # calculate melt molar fractions.
+    melt_molar = cc.componentFractions(melts, type= 'oxide', normalise= 'total')
+    
+    # Calulate melt molar concentration
+    # normalise to measured total instead of 100 to account for any missing volatiles
     total = melts.loc[:, components].sum(axis=1)
     melt_molar.loc[:, components] = melt_molar.loc[:, components].mul(
-        (total / melt_molar["total"]), axis=0
+        total, axis=0
     )
+
     melt_molar["total"] = melt_molar.loc[:, components].sum(axis=1)
 
     # correction of Si according to Toplis (2005)

@@ -143,13 +143,14 @@ def fO2QFM(logshift, T_K, Pbar):
         T_K = np.array(T_K)
         Pbar = np.array(Pbar)
 
-        QFM_pressure_component = pd.Series(np.nan, index= range(len(T_K)))
+        QFM_pressure_component = np.zeros(shape= [len(T_K),])
 
         for i, (temperature, pressure) in enumerate(zip(T_K, Pbar)):
             QFM_pressure_component[i] = QFM_pressure(temperature, pressure)
         
     else:        
         QFM_pressure_component = QFM_pressure(T_K, Pbar)
+    
 
     return np.exp((QFM_1bar(T_K) + QFM_pressure_component) / (R * T_K)) * offset
 
@@ -199,7 +200,7 @@ def FeRedox(composition, T_K, fO2, Pbar):
 
     molFractions = cc.componentFractions(composition, normalise="total")
     sumComponents = molFractions.loc[:, components].mul(dCoefficients).sum(axis=1)
-    sumComponents = np.array(sumComponents)
+    
 
     part1 = a * LNfO2 + b / T_K + c + sumComponents
     part2 = e * (1 - T0 / T_K - np.log(T_K / T0))
