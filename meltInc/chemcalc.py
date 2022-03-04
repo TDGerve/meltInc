@@ -5,6 +5,7 @@ import numpy as np
 import warnings as w
 import math
 from scipy.constants import R
+from typing import List
 
 
 # %% CHEMISTRY COMPONENTS
@@ -43,7 +44,7 @@ def oxideweights():
 
     element = elementweights()
     O = element["O"]
-    
+
     return pd.DataFrame(
         {
             "SiO2": element["Si"] + 2 * O,
@@ -120,8 +121,14 @@ def oxygens():
     )
 
 
-def componentFractions(composition, type="oxide", normalise=False, normFactor=None, elements=None):
-    
+def componentFractions(
+    composition: pd.DataFrame,
+    type: str = "oxide",
+    normalise: bool = False,
+    normFactor: int = 1,
+    elements: List[str] = None,
+):
+
     """Calulate oxide or cation fractions from major element compositions, with optional
     normalisation to a fixed number of oxygens,cations or the cation,oxide total
 
@@ -200,7 +207,18 @@ def componentFractions(composition, type="oxide", normalise=False, normFactor=No
                 .mul(oxygens().loc[0, components], axis=1)
                 .sum(axis=1)
             )
+        
 
+    if normalise == "total":
+        compositionMol["total"] = compositionMol.loc[:, components].sum(axis=1)
+        compositionMol.loc[:, components] = compositionMol.loc[:, components].div(
+            compositionMol["total"], axis=0
+        ) * normFactor
+
+        compositionMol["total"] = compositionMol.loc[:, components].sum(axis=1)
+
+
+    if type == "cation":
         catDict = {
             i: j
             for i, j in zip(
@@ -208,13 +226,6 @@ def componentFractions(composition, type="oxide", normalise=False, normFactor=No
             )
         }
         compositionMol.rename(columns=catDict, inplace=True)
-
-    if normalise == "total":
-        compositionMol["total"] = compositionMol.loc[:, components].sum(axis=1)
-        compositionMol.loc[:, components] = compositionMol.loc[:, components].div(
-            compositionMol["total"], axis=0
-        )
-        compositionMol["total"] = compositionMol.loc[:, components].sum(axis=1)
 
     return compositionMol
 
@@ -282,7 +293,7 @@ def pyroxeneComponents(composition):
     return components
 
 
-# %% RESERVOIR COMPOSITIONS
+# RESERVOIR COMPOSITIONS
 
 
 def C1chondrite():
@@ -309,7 +320,6 @@ def primitiveMantle():
     return PM
 
 
-# %%
 
 
 def radii(valency):
