@@ -7,7 +7,14 @@ from typing import Sequence
 
 
 def FeMg_olivine_liquid_Kd(
-    liquid: pd.DataFrame, olivine: pd.DataFrame, T_K, Pbar, model="Blundy", QFMlogshift=0, FeRedox_model="Borisov", **kwargs
+    liquid: pd.DataFrame,
+    olivine: pd.DataFrame,
+    T_K,
+    Pbar,
+    model="Blundy",
+    QFMlogshift=0,
+    FeRedox_model="Borisov",
+    **kwargs
 ):
     """
     Parameters
@@ -34,13 +41,12 @@ def FeMg_olivine_liquid_Kd(
     """
 
     H2Odefault = None
-
     H2O = kwargs.setdefault("H2O", H2Odefault)
 
     # Oxide wt.% to cation fractions
-    liquid_cation_fractions = cc.componentFractions(liquid, "cation", normalise="total")
+    liquid_cation_fractions = cc.componentFractions(liquid, "cation", normalise=True)
     olivine_cation_fractions = cc.componentFractions(
-        olivine, "cation", normalise="total"
+        olivine, "cation", normalise=True
     )
 
     # liquid Fe3/Fe2
@@ -52,11 +58,8 @@ def FeMg_olivine_liquid_Kd(
     Fe2Fe_total = 1 / (1 + Fe3Fe2)
 
     Kd_observed = (
-        olivine_cation_fractions["Fe"]
-        / liquid_cation_fractions["Fe"]
-        * Fe2Fe_total
-        * liquid_cation_fractions["Mg"]
-        / olivine_cation_fractions["Mg"]
+        (olivine_cation_fractions["Fe"] / (liquid_cation_fractions["Fe"] * Fe2Fe_total))
+        * (liquid_cation_fractions["Mg"] / olivine_cation_fractions["Mg"])
     ).rename("Kd_observed")
 
     # Forsterite content of olivines
@@ -65,7 +68,7 @@ def FeMg_olivine_liquid_Kd(
     )
 
     if model == "Toplis":
-        Kd_calculated = kd.Kd_ToplisIter(
+        Kd_calculated = kd.KdToplis_iterator(
             liquid,
             Fo,
             T_K,
@@ -76,14 +79,14 @@ def FeMg_olivine_liquid_Kd(
         )
     elif model == "Blundy":
         Kd_calculated = kd.Kd_Blundy(Fo, Fe3Fe2, T_K)
-    Kd_calculated.rename("Kd_calculated")
+    Kd_calculated.rename("Kd_calculated", inplace=True)
 
     return Kd_observed, Kd_calculated
 
 
 def FeMg_OlLiq_disequilibrium(Kd_observed, Kd_calculated, **kwargs):
 
-    toleranceDefault = 0.001
+    toleranceDefault = 0.01
     Kd_tolerance = kwargs.setdefault("Kd_tolerance", toleranceDefault)
 
     return pd.Series(

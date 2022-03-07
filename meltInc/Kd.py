@@ -60,11 +60,11 @@ def SiO2_A_toplis(liquid, H2O=None):
     int or list-like
     """
 
-    molar_weights = cc.oxideweights()
-    components = molar_weights.columns.intersection(liquid.columns)
+    oxides = cc.oxideweights()
+    components = oxides.index.intersection(liquid.columns)
 
     # calculate melt molar fractions normalised to 1
-    liq_molar_fractions = cc.componentFractions(liquid, type="oxide", normalise="total")
+    liq_molar_fractions = cc.componentFractions(liquid, type="oxide", normalise=True)
     # Total of the input composition
     total = liquid.loc[:, components].sum(axis=1)
     # Melt molar concentration renormalised to input Total to account for any missing volatiles
@@ -97,7 +97,7 @@ def Kd_toplis(T_K, P_bar, forsterite, SiO2_A):
     )
 
 
-def Kd_ToplisIter(
+def KdToplis_iterator(
     liquid: pd.DataFrame, olivine_forsterite, T_K, Pbar, H2O=None, QFMlogshift=0, FeRedox_model="Borisov", **kwargs
 ):
 

@@ -12,9 +12,9 @@ from typing import List
 
 
 def elementweights():
-    """Returns dataframe with weights of common elements"""
+    """Returns a pd.Series with weights of common elements"""
 
-    return pd.DataFrame(
+    return pd.Series(
         {
             "Si": 28.085,
             "Al": 26.981,
@@ -34,18 +34,17 @@ def elementweights():
             "Cu": 63.546,
             "H": 1.008,
             "O": 15.999,
-        },
-        index=[0],
+        }
     )
 
 
 def oxideweights():
-    """Returns dataframe with weights of common oxides"""
+    """Returns a pd.Series with weights of common oxides"""
 
     element = elementweights()
     O = element["O"]
 
-    return pd.DataFrame(
+    return pd.Series(
         {
             "SiO2": element["Si"] + 2 * O,
             "Al2O3": 2 * element["Al"] + 3 * O,
@@ -64,15 +63,14 @@ def oxideweights():
             "BaO": element["Ba"] + O,
             "CuO": element["Cu"] + O,
             "H2O": element["H"] * 2 + O,
-        },
-        index=[0],
+        }
     )
 
 
 def cations():
-    """Returns dataframe with number of cations in common oxides"""
+    """Returns a pd.Series with number of cations in common oxides"""
 
-    return pd.DataFrame(
+    return pd.Series(
         {
             "SiO2": 1,
             "Al2O3": 2,
@@ -90,15 +88,14 @@ def cations():
             "NiO": 1,
             "BaO": 1,
             "CuO": 1,
-        },
-        index=[0],
+        }
     )
 
 
 def oxygens():
-    """Returns a dataframe with number of oxygens in common oxides"""
+    """Returns a pd.Series with number of oxygens in common oxides"""
 
-    return pd.DataFrame(
+    return pd.Series(
         {
             "SiO2": 2,
             "Al2O3": 1.5,
@@ -116,8 +113,7 @@ def oxygens():
             "NiO": 1,
             "BaO": 1,
             "CuO": 1,
-        },
-        index=[0],
+        }
     )
 
 
@@ -138,13 +134,10 @@ def componentFractions(
         pandas dataframe with major element composition in oxide wt.%
     type : {'oxide', 'cation'}, default: 'oxide
         component type
-    normalise : {False, 'O', 'cat', 'total'}, optional
-        normalisation type, False for no normalisation, 'O' for oxygen
-        'cat' for cation and 'total' for total amount of components (oxide
-        or cation - specified in 'type')
+    normalise : {False, True, 'O'}, optional
+        normalisation type, False for no normalisation, True for oxide of cation (as set in 'type') and 'O' for oxygen.
     normFactor : int, optional
-        amount of oxides or cations to normalise to, e.g. 8 oxygen for plagioclase
-        or 100 for molar concentrations
+        amount of oxides, cations or oxygen to normalise to, e.g. 8 oxygen for plagioclase, 100 for concentrations and 1 for fractions
     elements : list, optional
         elements to use in the calculations
 
@@ -156,8 +149,8 @@ def componentFractions(
 
     if type not in ["oxide", "cation"]:
         raise ValueError("type should be 'oxide' or 'cation'")
-    if normalise not in [False, "O", "cat", "total"]:
-        raise ValueError("type should be False, 'O', 'cat' or 'total'")
+    if normalise not in [False, True, "O"]:
+        raise ValueError("type should be False, True or 'O'")
 
     if isinstance(composition, pd.Series):
         composition = pd.DataFrame(composition).T
@@ -165,69 +158,80 @@ def componentFractions(
     if elements is not None:
         components = elements.copy()
     else:
-        components = list(oxideweights().keys())
+        components = list(oxideweights().index)
     components = composition.columns.intersection(components)
 
-    compositionMol = composition.loc[:, components].div(
-        oxideweights().loc[0, components]
-    )
+    molar_proportions = composition.loc[:, components].div(oxideweights()[components])
+
+    if type == "oxide":
+
+        if normalise == True:
+            molar_proportions["total"] = molar_proportions.loc[:, components].sum(
+                axis=1
+            )
+            molar_proportions.loc[:, components] = (
+                molar_proportions.loc[:, components].div(
+                    molar_proportions["total"], axis=0
+                )
+                * normFactor
+            )
+
+        molar_proportions["total"] = molar_proportions.loc[:, components].sum(axis=1)
+
+        return molar_proportions
 
     if type == "cation":
-        compositionMol = compositionMol.mul(cations().loc[0, components])
+
+        cation_proportions = molar_proportions.mul(cations()[components])
 
         if normalise == "O":
-            oxygen = compositionMol.loc[:, components].mul(
-                oxygens().loc[0, components], axis=1
-            )
+            oxygen = cation_proportions.loc[:, components].mul(oxygens()[components])
             oxygen["total"] = oxygen.sum(axis=1)
 
-            compositionMol.loc[:, components] = (
-                compositionMol.loc[:, components].div(oxygen["total"], axis=0)
+            cation_proportions.loc[:, components] = (
+                cation_proportions.loc[:, components].div(oxygen["total"], axis=0)
                 * normFactor
             )
 
-            compositionMol["cations"] = compositionMol.loc[:, components].sum(axis=1)
-            compositionMol["O"] = (
-                compositionMol.loc[:, components]
-                .mul(oxygens().loc[0, components], axis=1)
+            cation_proportions["cations"] = cation_proportions.loc[:, components].sum(
+                axis=1
+            )
+            cation_proportions["O"] = (
+                cation_proportions.loc[:, components]
+                .mul(oxygens()[components])
                 .sum(axis=1)
             )
 
-        if normalise == "cat":
-            compositionMol["cations"] = compositionMol.loc[:, components].sum(axis=1)
+        if normalise == True:
+            cation_proportions["cations"] = cation_proportions.loc[:, components].sum(
+                axis=1
+            )
 
-            compositionMol.loc[:, components] = (
-                compositionMol.loc[:, components].div(compositionMol["cations"], axis=0)
+            cation_proportions.loc[:, components] = (
+                cation_proportions.loc[:, components].div(
+                    cation_proportions["cations"], axis=0
+                )
                 * normFactor
             )
 
-            compositionMol["cations"] = compositionMol.loc[:, components].sum(axis=1)
-            compositionMol["O"] = (
-                compositionMol.loc[:, components]
-                .mul(oxygens().loc[0, components], axis=1)
+            cation_proportions["cations"] = cation_proportions.loc[:, components].sum(
+                axis=1
+            )
+            cation_proportions["O"] = (
+                cation_proportions.loc[:, components]
+                .mul(oxygens()[components], axis=1)
                 .sum(axis=1)
             )
-        
 
-    if normalise == "total":
-        compositionMol["total"] = compositionMol.loc[:, components].sum(axis=1)
-        compositionMol.loc[:, components] = compositionMol.loc[:, components].div(
-            compositionMol["total"], axis=0
-        ) * normFactor
-
-        compositionMol["total"] = compositionMol.loc[:, components].sum(axis=1)
-
-
-    if type == "cation":
         catDict = {
             i: j
             for i, j in zip(
-                list(oxideweights().keys()), list(elementweights().keys())[:-1]
+                list(oxideweights().index), list(elementweights().index)[:-1]
             )
         }
-        compositionMol.rename(columns=catDict, inplace=True)
+        cation_proportions.rename(columns=catDict, inplace=True)
 
-    return compositionMol
+        return cation_proportions
 
 
 def pyroxeneComponents(composition):
@@ -247,6 +251,7 @@ def pyroxeneComponents(composition):
         Pandas dataframe with pyroxene components
     """
 
+    # Calculate cation fractions normalised to 6 oxygen
     pxFormula = componentFractions(
         composition, type="cation", normalise="O", normFactor=6
     )
@@ -318,8 +323,6 @@ def primitiveMantle():
     PM.columns = PMraw["Element"]
 
     return PM
-
-
 
 
 def radii(valency):
