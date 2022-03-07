@@ -40,6 +40,12 @@ def FeMg_olivine_liquid_Kd(
 
     """
 
+    if model not in ["Toplis", "Blundy"]:
+        ValueError(f"modek: '{model}' not recognised, options: 'Toplis', 'Blundy'")
+
+    if FeRedox_model not in ["Borisov", "KressCarmichael"]:
+        ValueError(f"FeRedox_model: '{FeRedox_model}' not recognised, options: 'Borisov, 'KressCarmichael'")
+
     H2Odefault = None
     H2O = kwargs.setdefault("H2O", H2Odefault)
 
