@@ -93,7 +93,7 @@ def cations():
 
 
 def oxygens():
-    """Returns a pd.Series with number of oxygens in common oxides"""
+    """Returns a pd.Series with number of oxygen per cation in common oxides"""
 
     return pd.Series(
         {
@@ -109,7 +109,7 @@ def oxygens():
             "SO3": 3,
             "P2O5": 2.5,
             "Cl": 0,
-            "Cr2O3": 3,
+            "Cr2O3": 1.5,
             "NiO": 1,
             "BaO": 1,
             "CuO": 1,
