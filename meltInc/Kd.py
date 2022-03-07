@@ -79,7 +79,7 @@ def SiO2_A_toplis(liquid, H2O=None):
 
     Phi = Phi_toplis(molar_SiO2, molar_Na2O, molar_K2O)
 
-    SiO2_A = molar_SiO2 + Phi * (molar_Na2O * molar_K2O)  # equation 11
+    SiO2_A = molar_SiO2 + Phi * (molar_Na2O + molar_K2O)  # equation 11
 
     if H2O:
         SiO2_A = SiO2_A + 0.8 * H2O  # equation 14
