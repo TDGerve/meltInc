@@ -63,17 +63,18 @@ def SiO2_A_toplis(liquid, H2O=None):
     oxides = cc.oxideweights()
     components = oxides.index.intersection(liquid.columns)
 
-    # calculate melt molar fractions normalised to 1
-    liq_molar_fractions = cc.componentFractions(liquid, type="oxide", normalise=True)
+    # Calculate melt molar concentrations
+    # Molar fractions normalised to 1
+    liq_molar_concentrations = cc.componentFractions(liquid, type="oxide", normalise=True)
     # Total of the input composition
     total = liquid.loc[:, components].sum(axis=1)
-    # Melt molar concentration renormalised to input Total to account for any missing volatiles
-    liq_molar_fractions.loc[:, components] = liq_molar_fractions.loc[:, components].mul(total, axis=0)
-    liq_molar_fractions["total"] = liq_molar_fractions.loc[:, components].sum(axis=1)
+    # Molar fractions renormalised to input total to account for potentially missing volatiles
+    liq_molar_concentrations.loc[:, components] = liq_molar_concentrations.loc[:, components].mul(total, axis=0)
+    liq_molar_concentrations["total"] = liq_molar_concentrations.loc[:, components].sum(axis=1)
 
-    molar_SiO2 = liq_molar_fractions["SiO2"]
-    molar_Na2O = liq_molar_fractions["Na2O"]
-    molar_K2O = liq_molar_fractions["K2O"]
+    molar_SiO2 = liq_molar_concentrations["SiO2"]
+    molar_Na2O = liq_molar_concentrations["Na2O"]
+    molar_K2O = liq_molar_concentrations["K2O"]
 
 
     Phi = Phi_toplis(molar_SiO2, molar_Na2O, molar_K2O)
