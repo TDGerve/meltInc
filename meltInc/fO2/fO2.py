@@ -218,13 +218,11 @@ def FeRedox_Boris(composition: pd.DataFrame, T_K, fO2, *args):
     Returns
     -------
     Fe3+/Fe2+ ratio in the liquid
-    """
+    """   
 
-    mol_fractions = cc.componentFractions(composition, normalise=True)
+    oxides = ["SiO2", "TiO2", "MgO", "CaO", "Na2O", "K2O", "Al2O3", "P2O5"]
 
-    oxides = ["SiO2", "TiO2", "MgO", "CaO", "Na2O", "K2O", "SiO2", "Al2O3", "P2O5"]
-
-    missing_oxides = set(oxides).difference(mol_fractions.columns)
+    missing_oxides = set(oxides).difference(composition.columns)
 
     if len(missing_oxides) > 0:
 
@@ -232,6 +230,9 @@ def FeRedox_Boris(composition: pd.DataFrame, T_K, fO2, *args):
             composition[oxide] = 0.0
 
         w.warn(f"{', '.join(str(i) for i in missing_oxides)} missing in composition and set to 0.")
+
+    # Oxide molar fractions
+    mol_fractions = cc.componentFractions(composition, normalise=True)
 
     part1 = (
         0.207 * np.log10(fO2)
