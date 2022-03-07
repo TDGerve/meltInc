@@ -201,7 +201,7 @@ def FeRedox_KC(composition, T_K, fO2, Pbar):
     h = 3.85e-17
     T0 = 1673
 
-    molFractions = cc.componentFractions(composition, normalise="total")
+    molFractions = cc.componentFractions(composition, normalise=True)
     sumComponents = molFractions.loc[:, components].mul(dCoefficients).sum(axis=1)
 
     part1 = a * LNfO2 + b / T_K + c + sumComponents
@@ -220,7 +220,7 @@ def FeRedox_Boris(composition: pd.DataFrame, T_K, fO2, *args):
     Fe3+/Fe2+ ratio in the liquid
     """
 
-    mol_fractions = cc.componentFractions(composition, normalise="total")
+    mol_fractions = cc.componentFractions(composition, normalise=True)
 
     oxides = ["SiO2", "TiO2", "MgO", "CaO", "Na2O", "K2O", "SiO2", "Al2O3", "P2O5"]
 

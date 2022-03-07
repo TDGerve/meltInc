@@ -34,10 +34,11 @@ def liquid_putirka(melt, P_bar):
     if len(absentOxides) > 0:
         raise KeyError(f'{absentOxides} not present in melt dataframe')
 
-    #convert pressure from bars to GPa
+    # Convert pressure from bars to GPa
     P_GPa = P_bar / 1E4
 
-    melt_mol = cc.componentFractions(melt, type= 'oxide', normalise= 'total')
+    # Calculate molar oxide fractions
+    melt_mol = cc.componentFractions(melt, type= 'oxide', normalise= True)
 
     part_1 = -583 + 3141 * melt_mol['SiO2'] + 15779 * melt_mol['Al2O3'] + 1338.6 * melt_mol['MgO']
     part_2 = - 31440 * melt_mol['SiO2'] * melt_mol['Al2O3'] + 77.67 * P_GPa
@@ -79,9 +80,9 @@ def olivine_putirka(olivine, melt, P_bar, H2O = 0):
             if not olivine.index.equals(j.index):
                 raise RuntimeError(f'{i} and olivine indices do not match')     
 
-    #calculate normalised cation fractions
-    olivine_cat = cc.componentFractions(olivine, type = 'cation', normalise = 'total')
-    melt_cat = cc.componentFractions(melt, type = 'cation', normalise = 'total')
+    #calculate cation fractions
+    olivine_cat = cc.componentFractions(olivine, type = 'cation', normalise = True)
+    melt_cat = cc.componentFractions(melt, type = 'cation', normalise = True)
 
     #Mg partitioning
     D_Mg = olivine_cat['MgO']/melt_cat['MgO']
