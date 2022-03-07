@@ -151,7 +151,7 @@ def KdToplis_iterator(
     )
     # Convert oxides to cations
     oxide_weights = cc.oxideweights()
-    ox_fact = (oxide_weights["FeO"] / oxide_weights["MgO"])[0]
+    ox_fact = (oxide_weights["FeO"] / oxide_weights["MgO"])
     # liquid Fe2+/Mg
     Fe2Mg_liquid = (liquid["FeO"] / liquid["MgO"]) / ox_fact * Fe2Fe_total
 
@@ -212,7 +212,7 @@ def equilibrium_forsterite(liquid, Kd, T_K, Pbar, QFMlogshift=0, FeRedox_model="
 
     oxide_weights = cc.oxideweights()
     # Convert oxides to cations
-    ox_fact = (oxide_weights["FeO"] / oxide_weights["MgO"])[0]
+    ox_fact = (oxide_weights["FeO"] / oxide_weights["MgO"])
     # liquid Fe2+/Fe3+ ratio
     Fe2Fe_total = 1 / (
         1
