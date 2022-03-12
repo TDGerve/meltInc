@@ -140,8 +140,8 @@ def fO2QFM(logshift, T_K, Pbar):
     offset = 10 ** logshift
 
     if not isinstance(Pbar, int):
-        T_K = np.array([T_K])
-        Pbar = np.array([Pbar])
+        T_K = np.array(T_K)
+        Pbar = np.array(Pbar)
 
         QFM_pressure_component = np.zeros(
             shape=[

@@ -118,14 +118,14 @@ def teosth(phase, pkbar, t, tref=298.15, **kwargs):
     params = ["s", "v0", "n", "a0", "K", "dKdP", "dKdP2"]
     s, v0, n, a0, K, dKdP, dKdP2 = [getattr(EOSparams, phase)[i] for i in params]
 
-    theta = 10636 / (s / n + 6.44)
+    theta = 10636. / (s / n + 6.44)
     u0 = theta / tref
-    ksi0 = math.pow(u0, 2) * math.exp(u0) / math.pow((math.exp(u0) - 1), 2)
-    a = (1 + dKdP) / (1 + dKdP + K * dKdP2)
-    b = dKdP / K - dKdP2 / (1 + dKdP)
-    c = (1 + dKdP + K * dKdP2) / (math.pow(dKdP, 2) + dKdP - K * dKdP2)
+    ksi0 = math.pow(u0, 2.) * math.exp(u0) / math.pow((math.exp(u0) - 1), 2.)
+    a = (1. + dKdP) / (1. + dKdP + K * dKdP2)
+    b = dKdP / K - dKdP2 / (1. + dKdP)
+    c = (1. + dKdP + K * dKdP2) / (math.pow(dKdP, 2.) + dKdP - K * dKdP2)
     u = theta / t
-    pth = a0 * K * theta / ksi0 * (1 / (math.exp(u) - 1) - 1 / (math.exp(u0) - 1))
+    pth = a0 * K * theta / ksi0 * (1 / (math.exp(u) - 1.) - 1 / (math.exp(u0) - 1.))
     intVdP = (
         pkbar
         * v0
