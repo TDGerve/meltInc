@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name= 'petroPy',
+    name= 'meltInc',
     version= '0.1',
     description= '...',
     author= 'Thomas van Gerve',
@@ -11,7 +11,7 @@ setuptools.setup(
         ),
 
     # package_dir= {'' : 'petroPy'},
-    package_data= {'petroPy': ['static/*']}, 
+    package_data= {'meltInc': ['static/*']}, 
 
     install_requires= [
     'pandas',
