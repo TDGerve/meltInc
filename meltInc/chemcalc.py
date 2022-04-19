@@ -8,7 +8,7 @@ from scipy.constants import R
 from typing import List
 
 
-# %% CHEMISTRY COMPONENTS
+
 
 
 def elementweights():
@@ -298,13 +298,10 @@ def pyroxeneComponents(composition):
     return components
 
 
-# RESERVOIR COMPOSITIONS
-
-
 def C1chondrite():
     """Returns C1 chondrite composition from McDonough & Sun (1995)"""
 
-    with resources.open_text("petroPy.static", "Mcdonough_sun_1995.csv") as df:
+    with resources.open_text("meltInc.static", "Mcdonough_sun_1995.csv") as df:
         C1raw = pd.read_csv(df)
 
     C1 = C1raw[["C1"]].transpose()
@@ -316,11 +313,11 @@ def C1chondrite():
 def primitiveMantle():
     """Returns primitive mantle composition from McDonough & Sun (1995)"""
 
-    with resources.open_text("petroPy.static", "Mcdonough_sun_1995.csv") as df:
+    with resources.open_text("meltInc.static", "Mcdonough_sun_1995.csv") as df:
         PMraw = pd.read_csv(df)
 
-    PM = PMraw[["Pyrolite"]].transpose()
-    PM.columns = PMraw["Element"]
+    PM = PMraw["Pyrolite"].transpose()
+    PM.index = PMraw["Element"]
 
     return PM
 
@@ -345,9 +342,9 @@ def radii(valency):
 
     valency = {2: 0, 3: 1, "REE": 1}[valency]
 
-    divalent = {"Mg": 0.89, "Ba": 1.42, "Ca": 1.12, "Eu": 1.25, "Sr": 1.26}
+    divalent = pd.Series({"Mg": 0.89, "Ba": 1.42, "Ca": 1.12, "Eu": 1.25, "Sr": 1.26})
 
-    REE = {
+    REE = pd.Series({
         "La": 1.16,
         "Ce": 1.143,
         "Pr": 1.126,
@@ -363,45 +360,8 @@ def radii(valency):
         "Tm": 0.994,
         "Yb": 0.985,
         "Lu": 0.977,
-    }
+    })
 
     total = [divalent, REE]
 
     return total[valency]
-
-
-# %%
-
-
-def TAS(labels=False):
-    """Returns a line plot element of classification of volcanic rocks
-    in total-alkali vs silica plots
-    """
-
-    with resources.open_text("petroPy.static", "TAS.csv") as df:
-        TAS = pd.read_csv(df)
-
-    rock_labels = {
-        "Picro-basalt": ["Picro\nbasalt", [41.7, 1.5]],
-        "Basalt": ["Basalt", [46, 2.5]],
-        "Basaltic andesite": ["Basaltic\nandesite", [53, 2]],
-        "Andesite": ["Andesite", [58, 3.5]],
-        "Dacite": ["Dacite", [65.5, 4]],
-        "Trachy-basalt": ["Trachy-\nbasalt", [47.5, 5.3]],
-        "Basaltic trachy-andesite": ["Basaltic\ntrachy-\nandesite", [51.6, 6.1]],
-        "Trachy-andesite": ["Trachy-\nandesite", [56, 8]],
-        "Trachyte": ["Trachyte", [64, 11]],
-        "Tephrite": ["Tephrite", [43.5, 7]],
-        "Phono-tephrite": ["Phono-\ntephrite", [47, 9.0]],
-        "Tephri-phonolite": ["Tephri-\nphonolite", [51, 11]],
-        "Phonolite": ["Phonolite", [55, 15]],
-        "Foidite": ["Foidite", [45, 14]],
-        "Rhyolite": ["Rhyolite", [72, 8.5]],
-    }
-
-    if labels:
-        for _, rock in rock_labels.items():
-            plt.text(*rock[1], rock[0], clip_on=True)
-
-    for id in TAS.id.unique():
-        plt.plot(TAS.loc[TAS.id == id, "x"], TAS.loc[TAS.id == id, "y"], "-", color="k")
