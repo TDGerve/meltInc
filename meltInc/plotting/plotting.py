@@ -63,7 +63,7 @@ def layout(fontSize= 16, axTitleSize= 16, axLabelSize= 16, tickLabelSize= 12, le
     plt.rcParams['figure.facecolor'] = 'white'
 
 
-def TAS(labels=False):
+def TAS(labels=False, fontsize="medium", **kwargs):
     """Returns a line plot element of classification of volcanic rocks
     in total-alkali vs silica plots
     """
@@ -73,12 +73,12 @@ def TAS(labels=False):
 
     rock_labels = {
         "Picro-basalt": ["Picro\nbasalt", [41.7, 1.5]],
-        "Basalt": ["Basalt", [46, 2.5]],
-        "Basaltic andesite": ["Basaltic\nandesite", [53, 2]],
-        "Andesite": ["Andesite", [58, 3.5]],
+        "Basalt": ["Basalt", [47, 2.5]],
+        "Basaltic andesite": ["Basaltic\nandesite", [53, 2.5]],
+        "Andesite": ["Andesite", [58, 2.5]],
         "Dacite": ["Dacite", [65.5, 4]],
-        "Trachy-basalt": ["Trachy-\nbasalt", [47.5, 5.3]],
-        "Basaltic trachy-andesite": ["Basaltic\ntrachy-\nandesite", [51.6, 6.1]],
+        "Trachy-basalt": ["Trachy-\nbasalt", [47.5, 5.5]],
+        "Basaltic trachy-andesite": ["Basaltic\ntrachy-\nandesite", [51.6, 6.5]],
         "Trachy-andesite": ["Trachy-\nandesite", [56, 8]],
         "Trachyte": ["Trachyte", [64, 11]],
         "Tephrite": ["Tephrite", [43.5, 7]],
@@ -91,8 +91,8 @@ def TAS(labels=False):
 
     if labels:
         for _, rock in rock_labels.items():
-            plt.text(*rock[1], rock[0], clip_on=True)
+            plt.text(*rock[1], rock[0], fontsize=fontsize, fontfamily="monospace", clip_on=True)
 
     for id in TAS.id.unique():
-        plt.plot(TAS.loc[TAS.id == id, "x"], TAS.loc[TAS.id == id, "y"], "-", color="k")
+        plt.plot(TAS.loc[TAS.id == id, "x"], TAS.loc[TAS.id == id, "y"], "-", color="k", **kwargs)
    
