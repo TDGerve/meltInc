@@ -165,7 +165,7 @@ def landauhppressure(phase, pkbar, t):
         q2 = 0
     gdistot = (
         smax
-        * (tc0 * (q02 - 1 / 3 * q02 ** 3. + 1 / 3 * q2 ** 3.) - tc * q2 - t * (q02 - q2))
+        * (tc0 * (q02 - 1 / 3 * q02**3. + 1 / 3 * q2**3.) - tc * q2 - t * (q02 - q2))
         + pkbar * vmax * q02
     )
     tc = tc0 + pkbar * 0 / smax
@@ -174,7 +174,7 @@ def landauhppressure(phase, pkbar, t):
     else:
         q2 = 0
     gdisprind = smax * (
-        tc0 * (q02 - 1 / 3 * q02 ** 3. + 1 / 3 * q2 ** 3.) - tc * q2 - t * (q02 - q2)
+        tc0 * (q02 - 1 / 3 * q02**3. + 1 / 3 * q2**3.) - tc * q2 - t * (q02 - q2)
     )
     gdisprdep = gdistot - gdisprind
 

@@ -5,6 +5,7 @@ import warnings as w
 import numpy as np
 import pandas as pd
 from scipy.constants import R
+import itertools as it
 
 
 def QFM_pressure(T_K, Pbar):
@@ -139,9 +140,16 @@ def fO2QFM(logshift, T_K, Pbar):
 
     offset = 10 ** logshift
 
-    if not isinstance(Pbar, int):
-        T_K = np.array(T_K)
-        Pbar = np.array(Pbar)
+    Pbar_is_int = isinstance(Pbar, (int, float))
+    T_K_is_int = isinstance(T_K, (int, float))
+
+    # exclusive or
+    if bool(Pbar_is_int) ^ bool(T_K_is_int):
+
+        # Cycle the short variable
+        T_K = [np.array(T_K), it.cycle(np.array([T_K]))][T_K_is_int]
+        Pbar = [np.array(Pbar), it.cycle(np.array([Pbar]))][Pbar_is_int]
+
 
         QFM_pressure_component = np.zeros(
             shape=[
@@ -206,9 +214,9 @@ def FeRedox_KC(composition, T_K, fO2, Pbar):
 
     part1 = a * LNfO2 + b / T_K + c + sumComponents
     part2 = e * (1 - T0 / T_K - np.log(T_K / T0))
-    part3 = f * P_Pa / T_K + g * ((T_K - T0) * P_Pa) / T_K + h * P_Pa ** 2 / T_K
+    part3 = f * P_Pa / T_K + g * ((T_K - T0) * P_Pa) / T_K + h * P_Pa**2 / T_K
 
-    return np.exp(part1 + part2 + part3)
+    return 2 * np.exp(part1 + part2 + part3)
 
 
 def FeRedox_Boris(composition: pd.DataFrame, T_K, fO2, *args):
@@ -263,14 +271,16 @@ def FeRedox_QFM(composition, T_K, Pbar, logshift=0, model="Borisov"):
 
     Parameters
     ----------
-    composition     pd.DataFrame
+    composition pd.DataFrame
         Liquid major element composition in wt.% oxides
-    T_K             float, pd.Series-like
+    T_K         float, pd.Series-like
         temperature in Kelvin
-    Pbar            float, pd.Series-like
+    Pbar        float, pd.Series-like
         Pressure in bars
-    logshift        int, pd.Series-like
+    logshift    int, pd.Series-like
         log units shift of QFM
+    model       string
+        'KressCarmichael' or 'Borisov'       
 
     Returns
     -------

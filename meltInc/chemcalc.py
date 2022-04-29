@@ -8,9 +8,6 @@ from scipy.constants import R
 from typing import List
 
 
-
-
-
 def elementweights():
     """Returns a pd.Series with weights of common elements"""
 
@@ -134,7 +131,7 @@ def componentFractions(
         pandas dataframe with major element composition in oxide wt.%
     type : {'oxide', 'cation'}, default: 'oxide
         component type
-    normalise : {False, True, 'O'}, optional
+    normalise : {False, 'total', 'cation', 'O'}, optional
         normalisation type, False for no normalisation, True for oxide of cation (as set in 'type') and 'O' for oxygen.
     normFactor : int, optional
         amount of oxides, cations or oxygen to normalise to, e.g. 8 oxygen for plagioclase, 100 for concentrations and 1 for fractions
@@ -149,8 +146,8 @@ def componentFractions(
 
     if type not in ["oxide", "cation"]:
         raise ValueError("type should be 'oxide' or 'cation'")
-    if normalise not in [False, True, "O"]:
-        raise ValueError("type should be False, True or 'O'")
+    if normalise not in [True, False, "total", "cation", "O"]:
+        raise ValueError("normalise should be True, False, 'total', 'cation', or 'O'")
 
     if isinstance(composition, pd.Series):
         composition = pd.DataFrame(composition).T
@@ -165,7 +162,7 @@ def componentFractions(
 
     if type == "oxide":
 
-        if normalise == True:
+        if normalise in [True, "total"]:
             molar_proportions["total"] = molar_proportions.loc[:, components].sum(
                 axis=1
             )
@@ -184,12 +181,32 @@ def componentFractions(
 
         cation_proportions = molar_proportions.mul(cations()[components])
 
+        oxygen = cation_proportions.loc[:, components].mul(oxygens()[components])
+        cation_proportions["O"] = oxygen.sum(axis=1)
+
+        if normalise == "total":
+
+            components_O = components + ["O"]
+
+            cation_proportions["total"] = cation_proportions.loc[:, components_O].sum(
+                axis=1
+            )
+            cation_proportions.loc[:, components_O] = (
+                cation_proportions.loc[:, components_O].div(
+                    cation_proportions["total"], axis=0
+                )
+                * normFactor
+            )
+            cation_proportions["total"] = cation_proportions.loc[:, components_O].sum(
+                axis=1
+            )
+
         if normalise == "O":
-            oxygen = cation_proportions.loc[:, components].mul(oxygens()[components])
-            oxygen["total"] = oxygen.sum(axis=1)
 
             cation_proportions.loc[:, components] = (
-                cation_proportions.loc[:, components].div(oxygen["total"], axis=0)
+                cation_proportions.loc[:, components].div(
+                    cation_proportions["O"], axis=0
+                )
                 * normFactor
             )
 
@@ -202,7 +219,7 @@ def componentFractions(
                 .sum(axis=1)
             )
 
-        if normalise == True:
+        if normalise == "cation":
             cation_proportions["cations"] = cation_proportions.loc[:, components].sum(
                 axis=1
             )
@@ -344,23 +361,25 @@ def radii(valency):
 
     divalent = pd.Series({"Mg": 0.89, "Ba": 1.42, "Ca": 1.12, "Eu": 1.25, "Sr": 1.26})
 
-    REE = pd.Series({
-        "La": 1.16,
-        "Ce": 1.143,
-        "Pr": 1.126,
-        "Nd": 1.109,
-        "Sm": 1.079,
-        "Eu": 1.066,
-        "Gd": 1.053,
-        "Tb": 1.040,
-        "Dy": 1.027,
-        "Y": 1.019,
-        "Ho": 1.015,
-        "Er": 1.004,
-        "Tm": 0.994,
-        "Yb": 0.985,
-        "Lu": 0.977,
-    })
+    REE = pd.Series(
+        {
+            "La": 1.16,
+            "Ce": 1.143,
+            "Pr": 1.126,
+            "Nd": 1.109,
+            "Sm": 1.079,
+            "Eu": 1.066,
+            "Gd": 1.053,
+            "Tb": 1.040,
+            "Dy": 1.027,
+            "Y": 1.019,
+            "Ho": 1.015,
+            "Er": 1.004,
+            "Tm": 0.994,
+            "Yb": 0.985,
+            "Lu": 0.977,
+        }
+    )
 
     total = [divalent, REE]
 
