@@ -143,12 +143,15 @@ def fO2QFM(logshift, T_K, Pbar):
     Pbar_is_int = isinstance(Pbar, (int, float))
     T_K_is_int = isinstance(T_K, (int, float))
 
-    # exclusive or
-    if bool(Pbar_is_int) ^ bool(T_K_is_int):
+    # If P and T are not both integer-like
+    if not (Pbar_is_int and T_K_is_int):
+    
+        # If only one variable, P or T, is integer-like
+        if bool(Pbar_is_int) ^ bool(T_K_is_int):
 
-        # Cycle the short variable
-        T_K = [np.array(T_K), it.cycle(np.array([T_K]))][T_K_is_int]
-        Pbar = [np.array(Pbar), it.cycle(np.array([Pbar]))][Pbar_is_int]
+            # Cycle the short variable
+            T_K = [np.array(T_K), it.cycle(np.array([T_K]))][T_K_is_int]
+            Pbar = [np.array(Pbar), it.cycle(np.array([Pbar]))][Pbar_is_int]
 
 
         QFM_pressure_component = np.zeros(
