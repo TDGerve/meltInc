@@ -1,6 +1,9 @@
+from matplotlib.font_manager import FontProperties
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from importlib import resources
 import pandas as pd
+import seaborn as sns
 
 # Color palettes
 class colors:
@@ -8,7 +11,9 @@ class colors:
     Color palettes for plots
     """
 
-    flatDesign = plt.cycler(color=["#e27a3d", "#344d5c", "#df5a49", "#43b29d", "#efc94d"])
+    flatDesign = plt.cycler(
+        color=["#e27a3d", "#344d5c", "#df5a49", "#43b29d", "#efc94d"]
+    )
 
     firenze = plt.cycler(color=["#8E2800", "#468966", "#B64926", "#FFF0A5", "#FFB03B"])
 
@@ -38,7 +43,6 @@ def layout(
     axTitleSize=16,
     axLabelSize=16,
     tickLabelSize=12,
-    legendFontSize=8,
     colors=colors.firenze,
 ):
 
@@ -51,7 +55,7 @@ def layout(
     plt.rc("font", family="sans-serif", size=fontSize)
 
     # Legend
-    plt.rc("legend", fontsize=legendFontSize, fancybox=False)
+    plt.rc("legend", fontsize=fontSize / 1.5, fancybox=False, facecolor="white")
 
     # Axes
     plt.rc("xtick", direction="in", labelsize=tickLabelSize)
@@ -116,3 +120,59 @@ def TAS(labels=False, fontsize="medium", **kwargs):
             color="k",
             **kwargs
         )
+
+
+def side_plots(fig, x_axis: bool, y_axis: bool, side=10, **kwargs):
+
+    widths = [(100,), (100. - side, side)][y_axis]
+    heights = [(100,), (side, 100. - side)][x_axis]
+
+    left, right = 0.12, 0.97
+    top, bottom = 0.97, 0.1
+    spacing = 0.03
+
+    grid = fig.add_gridspec(
+        ncols=1 + y_axis,
+        nrows=1 + x_axis,
+        width_ratios=widths,
+        height_ratios=heights,
+        left=left,
+        right=right,
+        bottom=bottom,
+        top=top,
+        hspace=spacing,
+        wspace=spacing,
+    )
+
+    ax = fig.add_subplot(grid[0 + x_axis, 0])
+
+    axes = []
+
+    if x_axis:        
+        ax_kde_x = fig.add_subplot(grid[0, 0], sharex=ax)
+        axes.append(ax_kde_x)
+
+        ax_kde_x.spines["left"].set_visible(False)
+        ax_kde_x.yaxis.set_visible(False)
+        ax_kde_x.tick_params(axis="x", labelbottom=False, direction="in")
+
+
+    if y_axis:
+        ax_kde_y = fig.add_subplot(grid[0 + x_axis, 1], sharey=ax)  
+        axes.append(ax_kde_y) 
+        
+        ax_kde_y.xaxis.set_visible(False)
+        ax_kde_y.spines["bottom"].set_visible(False)
+        ax_kde_y.tick_params(axis="y", labelleft=False, direction="in")
+
+    
+    for axis in axes:
+        # axis.set_frame_on(False)
+        axis.grid(False)
+        axis.set_facecolor(color="white")
+
+        for spine in ["right", "top"]:
+            axis.spines[spine].set_visible(False)
+
+    return ax, *axes
+
