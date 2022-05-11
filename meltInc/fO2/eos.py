@@ -139,8 +139,8 @@ def tait_eos_pressure(phase, pkbar, t, tref=298.15, **kwargs):
         Contribution of pressure to the Gibbs free energy
     """
 
-    params = ["s", "v0", "n", "a0", "K", "dKdP", "dKdP2"]
-    s, v0, n, a0, K, dKdP, dKdP2 = [getattr(EOSparams, phase)[i] for i in params]
+    params = ["s", "v0", "n", "a0", "K0", "dKdP", "dKdP2"]
+    s, v0, n, a0, K0, dKdP, dKdP2 = [getattr(EOSparams, phase)[i] for i in params]
 
     # Einstein temperature
     theta = 10636.0 / (s / n + 6.44)
@@ -152,12 +152,12 @@ def tait_eos_pressure(phase, pkbar, t, tref=298.15, **kwargs):
     xi0 = u0 ** 2 * np.exp(u0) / (np.exp(u0) - 1) ** 2.0
 
     # Equation 3
-    a = (1.0 + dKdP) / (1.0 + dKdP + K * dKdP2)
-    b = dKdP / K - dKdP2 / (1.0 + dKdP)
-    c = (1.0 + dKdP + K * dKdP2) / (dKdP ** 2.0 + dKdP - K * dKdP2)
+    a = (1.0 + dKdP) / (1.0 + dKdP + K0 * dKdP2)
+    b = dKdP / K0 - dKdP2 / (1.0 + dKdP)
+    c = (1.0 + dKdP + K0 * dKdP2) / (dKdP ** 2.0 + dKdP - K0 * dKdP2)
 
     # thermal pressure term, equation 11
-    Pth = a0 * K * theta / xi0 * (1 / (np.exp(u) - 1.0) - 1 / (np.exp(u0) - 1.0))
+    Pth = a0 * K0 * theta / xi0 * (1 / (np.exp(u) - 1.0) - 1 / (np.exp(u0) - 1.0))
 
     # Intergral of volume, equation 13
     PV0 = pkbar * v0
@@ -168,6 +168,7 @@ def tait_eos_pressure(phase, pkbar, t, tref=298.15, **kwargs):
     VdP = PV0 * (1 - a + a * (part1 - part2) / part3)
 
     return [Pth, a, b, c, VdP]
+
 
 
 def enthalpy(phase, t, tref=298.15):

@@ -51,23 +51,23 @@ def QFM_pressure(T_K, Pbar):
 
     # VdP Fe2SiO4 polymorphs
     *_, VdP_fay = eos.tait_eos_pressure(phase="fayalite", pkbar=min(p_kbar, P_fay_ring), t=T_K)
-    dvdpFe2SiO4Hol_P = vVdP_fay
+    dVdP_Fe2SiO4 = VdP_fay
     if p_kbar > P_fay_ring:
         VdP_ring = (
             eos.tait_eos_pressure(phase="ringwoodite", pkbar=p_kbar, t=T_K)[4]
             - eos.tait_eos_pressure(phase="ringwoodite", pkbar=P_fay_ring, t=T_K)[4]
         )
-        dvdpFe2SiO4 = dvdpFe2SiO4Hol_P + VdP_ring
+        dVdP_Fe2SiO4 = dVdP_Fe2SiO4 + VdP_ring
 
     # VdP magnetite
     VdP_mt = eos.tait_eos_pressure(phase="magnetite", pkbar=p_kbar, t=T_K)[4]
 
-    return 3e3 * dVdP_qtz + 2e3 * VdP_mt - 3e3 * dvdpFe2SiO4
+    return 3e3 * dVdP_qtz + 2e3 * VdP_mt - 3e3 * dVdP_Fe2SiO4
 
 
 def QFM_1bar(T_K):
     """
-    calculate chemical potential of oxygen (fO2) at QFM a 1 bar. Equation from O'Neill 1987
+    calculate chemical potential of oxygen at QFM a 1 bar. Equation from O'Neill 1987
 
     Parameters
     ----------
@@ -76,7 +76,7 @@ def QFM_1bar(T_K):
 
     Returns
     -------
-    Chemical potential (or Gibbs free energy per mole)
+    Chemical potential
     """
 
     # if T_K is an integer
@@ -99,13 +99,35 @@ def QFM_1bar(T_K):
     return -587474 + 1584.427 * T_K - 203.3164 * T_K * np.log(T_K) + 0.092710 * T_K ** 2
 
 
+def fO2QFM_1bar(T_K, logshift=0):
+    """
+    calculate fO2 at QFM + logshift a 1 bar. Equation from O'Neill 1987
+
+    Parameters
+    ----------
+    T_K     list-like, float
+        Temperature in Kelvin
+    logshift   int, float
+        Log units by which QFM is shifted
+
+    Returns
+    -------
+    fO2
+    """
+    mu_O2 = QFM_1bar(T_K)
+
+    offset = 10 ** logshift
+
+    return np.exp(mu_O2 / (R * T_K)) * offset
+
+
 def fO2QFM(logshift, T_K, Pbar):
     """
     calculate oxygen fugacity at QFM offset by arbitraty log units.
 
     Parameters
     ----------
-    log_units   int
+    logshift   int, float
         Log units by which QFM is shifted
     T_K         float, pd.Series-like
         Temperature in Kelvin
