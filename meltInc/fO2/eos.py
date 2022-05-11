@@ -1,6 +1,6 @@
 import numpy as np
-import math
 import scipy.optimize as opt
+import sympy as sym
 
 
 class EOSparams:
@@ -10,13 +10,15 @@ class EOSparams:
     v0                      volume at 1bar, 298K
     n                       atoms per formula unit
     a0                      coefficient of thermal expansion
-    K                       bulk modulus at 1bar, 298K
+    K0                       bulk modulus at 1bar, 298K
     dKdP                    first derivative of K
     dKdP2                   second derivative of K
     cp_a, cp_b, cp_c, cp_d  coefficients of heat capacity polynomial: a + bT + cT**-2 + dT**-(1/2)
-    smax, vmax, Tc0         Landau theory parameters for phase transitions
+    Tc0                     Landau critical temperature at 1 bar
+    vmax                    maximum volume of disorder
+    smax                    maximum entropy of disorder
 
-    Most data from Holland & Powell (2011), some updated from somewhere else by Olivier
+    data from Holland & Powell (2011)
     """
 
     fayalite = {
@@ -25,7 +27,7 @@ class EOSparams:
         "v0": 4.631,
         "n": 7,
         "a0": 2.82e-5,
-        "K": 1256,
+        "K0": 1256,
         "dKdP": 4.68,
         "dKdP2": -3.7e-3,
         "cp_a": 2.011e-1,
@@ -40,7 +42,7 @@ class EOSparams:
         "v0": 4.203,
         "n": 7,
         "a0": 2.22e-5,
-        "K": 1977,
+        "K0": 1977,
         "dKdP": 4.92,
         "dKdP2": -2.5e-3,
         "cp_a": 1.668e-1,
@@ -55,7 +57,7 @@ class EOSparams:
         "v0": 2.269,
         "n": 3,
         "a0": 0,
-        "K": 730,
+        "K0": 730,
         "dKdP": 6,
         "dKdP2": -8.2e-3,
         "smax": 4.95 / 1e3,
@@ -73,7 +75,7 @@ class EOSparams:
         "v0": 2.064,
         "n": 3,
         "a0": 1.23e-5,
-        "K": 979,
+        "K0": 979,
         "dKdP": 4.19,
         "dKdP2": -4.3e-3,
         "cp_a": 1.078e-1,
@@ -88,7 +90,7 @@ class EOSparams:
         "v0": 1.401,
         "n": 3,
         "a0": 1.58e-5,
-        "K": 3090,
+        "K0": 3090,
         "dKdP": 4.6,
         "dKdP2": -1.50e-3,
         "cp_a": 6.81e-2,
@@ -103,7 +105,7 @@ class EOSparams:
         "v0": 4.452,
         "n": 7,
         "a0": 3.71e-5,
-        "K": 1857,
+        "K0": 1857,
         "dKdP": 4.05,
         "dKdP2": -2.2e-3,
         "smax": 35.0,
@@ -112,117 +114,292 @@ class EOSparams:
     }
 
 
-def teosth(phase, pkbar, t, tref=298.15, **kwargs):
-    """Tait equation of state"""
+def tait_eos_pressure(phase, pkbar, t, tref=298.15, **kwargs):
+    """    
+    Pressure contribution to Gibb's free energy.
+    Tait equation of state from Holland and Powell (2011)
+
+    Parameters
+    ----------
+    phase       str
+        Mineral phase
+    pkbar       int, float
+        Pressure in kilobar
+    t           int, float
+        Temperature in Kelvin
+    tref        int, float
+        Reference temperature in Kelvin
+    
+    Returns
+    Pth         float
+        Thermal pressure term
+    a, b, c     float
+        Equation of state parameters
+    VdP         float
+        Contribution of pressure to the Gibbs free energy
+    """
 
     params = ["s", "v0", "n", "a0", "K", "dKdP", "dKdP2"]
     s, v0, n, a0, K, dKdP, dKdP2 = [getattr(EOSparams, phase)[i] for i in params]
 
-    theta = 10636. / (s / n + 6.44)
+    # Einstein temperature
+    theta = 10636.0 / (s / n + 6.44)
+
     u0 = theta / tref
-    ksi0 = math.pow(u0, 2.) * math.exp(u0) / math.pow((math.exp(u0) - 1), 2.)
-    a = (1. + dKdP) / (1. + dKdP + K * dKdP2)
-    b = dKdP / K - dKdP2 / (1. + dKdP)
-    c = (1. + dKdP + K * dKdP2) / (math.pow(dKdP, 2.) + dKdP - K * dKdP2)
     u = theta / t
-    pth = a0 * K * theta / ksi0 * (1 / (math.exp(u) - 1.) - 1 / (math.exp(u0) - 1.))
-    intVdP = (
-        pkbar
-        * v0
-        * (
-            1
-            - a
-            + a
-            * (
-                np.sign((1 - b * pth)) * math.pow(abs(1 - b * pth), (1 - c))
-                - np.sign((1 + b * (pkbar - pth)))
-                * math.pow(abs((1 + b * (pkbar - pth))), (1 - c))
-            )
-            / (b * (c - 1) * pkbar)
-        )
-    )
 
-    return [pth, a, b, c, intVdP]
+    # Einstein function page 345
+    xi0 = u0 ** 2 * np.exp(u0) / (np.exp(u0) - 1) ** 2.0
 
+    # Equation 3
+    a = (1.0 + dKdP) / (1.0 + dKdP + K * dKdP2)
+    b = dKdP / K - dKdP2 / (1.0 + dKdP)
+    c = (1.0 + dKdP + K * dKdP2) / (dKdP ** 2.0 + dKdP - K * dKdP2)
 
-def teosthV(v, pth, a, b, c, v0, pkbar, **kwargs):
-    """Tait equation of state"""
+    # thermal pressure term, equation 11
+    Pth = a0 * K * theta / xi0 * (1 / (np.exp(u) - 1.0) - 1 / (np.exp(u0) - 1.0))
 
-    vteosth = v - v0 * (1 - a * (1 - (1 + b * (pkbar - pth)) ** -c))
+    # Intergral of volume, equation 13
+    PV0 = pkbar * v0
+    part1 = np.sign(1 - b * Pth) * abs(1 - b * Pth) ** (1 - c)
+    part2 = np.sign(1 + b * (pkbar - Pth)) * abs(1 + b * (pkbar - Pth)) ** (1 - c)
+    part3 = b * (c - 1) * pkbar
 
-    return vteosth
+    VdP = PV0 * (1 - a + a * (part1 - part2) / part3)
+
+    return [Pth, a, b, c, VdP]
 
 
-def landauhppressure(phase, pkbar, t):
+def enthalpy(phase, t, tref=298.15):
+    """
+    Enthalpy as Cp.dT, integrated from T to T(reference), with heat capacity as:
 
-    smax, vmax, tc0 = [getattr(EOSparams, phase)[i] for i in ["smax", "vmax", "Tc0"]]
+    Cp = a + bT + cT**-2 + dT**(-1/2)
 
-    q02 = np.sqrt(1 - 298.15 / tc0)
-    tc = tc0 + pkbar * vmax / smax
-    if (tc - t) > 0:
-        q2 = np.sqrt((tc - t) / tc0)
-    else:
-        q2 = 0
-    gdistot = (
-        smax
-        * (tc0 * (q02 - 1 / 3 * q02**3. + 1 / 3 * q2**3.) - tc * q2 - t * (q02 - q2))
-        + pkbar * vmax * q02
-    )
-    tc = tc0 + pkbar * 0 / smax
-    if (tc - t) > 0:
-        q2 = np.sqrt((tc - t) / tc0)
-    else:
-        q2 = 0
-    gdisprind = smax * (
-        tc0 * (q02 - 1 / 3 * q02**3. + 1 / 3 * q2**3.) - tc * q2 - t * (q02 - q2)
-    )
-    gdisprdep = gdistot - gdisprind
+    Cp, a, b, c, & d from Holland and Powell (2011)
 
-    return gdisprdep
+    Parameters
+    ----------
+    phase   str
 
+    t       int, float
+        temperature in Kelvin
 
-def CpHoll(phase, t, tref=298.15):
-    """Heat capacity from Holland"""
+    tref    int, float
+        reference temperature in Kelvin
+
+    Returns
+    -------
+    enthalpy   float
+    """
 
     a, b, c, d = [
         getattr(EOSparams, phase)[i] for i in ["cp_a", "cp_b", "cp_c", "cp_d"]
     ]
 
-    CpHolland = (a * t + 0.5 * b * (t ** 2.) - c * (t ** -1.) + 2 * d * t ** 0.5) - (
-        a * tref + 0.5 * b * (tref ** 2.) - c * (tref ** -1.) + 2 * d * tref ** 0.5
-    )
+    T = sym.Symbol("T")
+    Cp = a + b * T + c * T ** -2 + d * T ** (-1 / 2)
+    enthalpy = sym.integrate(Cp, (T, tref, t)).evalf()
 
-    return CpHolland
+    return float(enthalpy)
 
 
-def CpTHoll(phase, t, tref=298.15):
-    """Heat capacity from Holland"""
+def entropy(phase, t, tref=298.15):
+    """
+    Entropy as (Cp/T)dT, integrated from T to T(reference), with:
+
+    Cp/T = a/T + b + cT**-3 + dT**(-3/2)
+
+    Cp, a, b, c & d from Holland and Powell (2011)
+
+    Parameters
+    ----------
+    phase   str
+
+    t       int, float
+        temperature in Kelvin
+
+    tref    int, float
+        reference temperature in Kelvin
+
+    Returns
+    -------
+    entropy   float
+    """
 
     a, b, c, d = [
         getattr(EOSparams, phase)[i] for i in ["cp_a", "cp_b", "cp_c", "cp_d"]
     ]
 
-    CpTHolland = (a * np.log(t) + b * t - 0.5 * c * t ** (-2.) - 2 * d * t ** (-0.5)) - (
-        a * np.log(tref) + b * tref - 0.5 * c * tref ** (-2.) - 2 * d * tref ** (-0.5)
-    )
+    T = sym.Symbol("T")
+    CpT = a / T + b + c * T ** -3 + d * T ** (-3 / 2)
+    entropy = sym.integrate(CpT, (T, tref, t)).evalf()
 
-    return CpTHolland
+    return float(entropy)
 
 
-def landauhp1bar(phase, pkbar, t):
+def landau_P_dependent(phase, pkbar, t):
+    """
+    Pressure contribution to excess Gibbs free energy from Landau theory.
+
+    Based on:
+    Holland and Powell, 1998, p.312
+    and
+    Holland and Powell, 1990
+
+    see also FMQ buffer details and references at:
+    https://fo2.rses.anu.edu.au/fo2app/
+
+    Parameters
+    ----------
+    phase   str
+        Mineral phase
+    pkbar   int, float
+        Pressure in kilobar
+    t       int, float
+        Temperature in Kelvin
+
+    Returns
+    -------
+    float
+        Pressure dependent contribution to the excess Gibbs free enery from Landau theory
+    """
 
     smax, vmax, tc0 = [getattr(EOSparams, phase)[i] for i in ["smax", "vmax", "Tc0"]]
 
-    q02 = np.sqrt(1 - 298.15 / tc0)
+    Q2_0 = np.sqrt(1 - 298.15 / tc0)
+
+    # Landau critical temperature at pkbar
     tc = tc0 + pkbar * vmax / smax
-    if (tc - t) > 0:
-        q2 = np.sqrt((tc - t) / tc0)
+
+    if t > tc:
+        Q2 = 0
     else:
-        q2 = 0
-    gdistot = (
-        smax
-        * (tc0 * (q02 - 1 / 3 * q02 ** 3. + 1 / 3 * q2 ** 3.) - tc * q2 - t * (q02 - q2))
-        + pkbar * vmax * q02
+        Q2 = np.sqrt((tc - t) / tc0)
+
+    G_pressure_dependent = (
+        smax * (tc0 * (Q2 + (Q2 ** 3 - Q2_0 ** 3) / 3) - tc * Q2 - t * (Q2_0 - Q2))
+        + pkbar * vmax * Q2_0
     )
 
-    return gdistot
+    return G_pressure_dependent
+
+
+def landau_total(phase, pkbar, t):
+    """
+    Excess Gibbs free energy from Landau theory
+
+    Equations from Holland and Powell (1998), p. 312
+
+    Parameters
+    ----------
+    phase   str
+        Mineral phase
+    pkbar   int, float
+        Pressure in kilobars
+    t       int, float
+        Temperature in Kelvin
+
+    Returns
+    -------
+    float
+        Excess Gibbs free enery from Landau theory
+    """
+
+    smax, vmax, tc0, a0, K0 = [
+        getattr(EOSparams, phase)[i] for i in ["smax", "vmax", "Tc0", "a0", "K0"]
+    ]
+
+    # Landau critical temperature
+    tc = tc0 + vmax * pkbar / smax
+    # Q: oder paramter in the landau model
+    Q2_0 = np.sqrt(1 - 298.15 / tc0)
+    
+    if t > tc:
+        Q2 = 0
+    else:
+        Q2 = np.sqrt((tc - t) / tc0)
+
+    # Bulk modulus
+    K = K0 * (1 - 1.5e-4 * (t - 298))
+
+    # Excess enthalpy at 298K from Landau model disordering
+    h = smax * tc0 * (Q2_0 - (Q2_0 ** 3) / 3)
+    # Excess entropy at 298K from Landau model disordering
+    s = smax * Q2_0
+
+    # Excess volume from Landau model disordering
+    vt = vmax * Q2_0 * (1 + a0 * (t - 298)) - 20 * a0 * (np.sqrt(t) - np.sqrt(298))
+
+    vtdP = vt * K / 3 * ((1 + 4 * pkbar / K)**(3 / 4) - 1)
+
+    delta_G_landau = smax * ((t - tc0) * Q2 + (tc * Q2**3) / 3)
+
+    return h - t * s + vtdP + delta_G_landau
+
+
+# def landau_P_independent(phase, pkbar, t):
+#     """
+#     Pressure independent contribution to the Landau free energy of ordering.
+#     Holland and Powell (2011) p.312 with Vmax (maximum volume of disorder) = 0
+
+#     Doesn't match landau_total and landau_P_dependent
+#     """
+#     smax, tc0, a0, K0 = [getattr(EOSparams, phase)[i] for i in ["smax", "Tc0", "a0", "K0"]]
+
+#     Q2_0 = np.sqrt(1 - 298.15 / tc0)
+#     tc = tc0
+#     if t > tc:
+#         Q2 = 0
+#     else:
+#         Q2 = np.sqrt((tc - t) / tc0)
+
+#     h = smax * tc0 * (Q2_0 - Q2_0 ** 3 / 3)
+#     s = smax * Q2_0
+
+#     vt = - 20 * a0 * (np.sqrt(t) - np.sqrt(298))
+#     vtdP = vt * K0 / 3 * ((1 + 4 * pkbar / K0)**(3 / 4) - 1)    
+
+#     delta_G_landau = smax * ((t - tc0) * Q2 + (tc * Q2 ** 3) / 3)
+
+#     return h - t * s + vtdP + delta_G_landau
+
+
+def phaseTransition(pkbar, t, phase_1, phase_2):
+    """
+    Gibbs free energy of transition from phase_1 to phase_2
+
+    Parameters
+    ----------
+    pkbar               int, float
+        Pressure in kilobar
+    t                   int, float
+        Temperature in Kelvin
+    phase_1, phase_2    str
+        Mineral phases
+
+    Returns
+    -------
+    float
+        Gibbs free energy of phase transition
+    """
+
+    results = []
+
+    for phase in [phase_1, phase_2]:
+
+        h = getattr(EOSparams, phase)["h"]
+        s = getattr(EOSparams, phase)["s"] / 1e3
+
+        Gibbs = h + enthalpy(phase=phase, t=t) - t * (s + entropy(phase=phase, t=t))
+        *_, VdP = tait_eos_pressure(phase=phase, pkbar=pkbar, t=t)
+
+        Gibbs = Gibbs + VdP
+
+        if phase in ["quartz", "magnetite"]:
+
+            Gibbs = Gibbs + landau_total(phase=phase, pkbar=pkbar, t=t)
+
+        results.append(Gibbs)
+
+    return results[0] - results[1]

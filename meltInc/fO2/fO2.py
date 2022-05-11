@@ -9,82 +9,60 @@ import itertools as it
 
 
 def QFM_pressure(T_K, Pbar):
+    """
+    Pressure contribution to the chemical potential of oxygen (fO2) at QFM
+    """
 
-    pgpa = Pbar / 1e4
+    p_kbar = Pbar / 1e3
 
     # Pressure of transition SiO2 polymorphs
-    pqzcoe = lambda pkbar: phaseTransition(
-        pkbar, t=T_K, phase_1="quartz", phase_2="coesite"
+    qtz_coe = lambda P: eos.phaseTransition(
+        P, t=T_K, phase_1="quartz", phase_2="coesite"
     )
-    pqzcoe = opt.fsolve(pqzcoe, 8)
+    P_qtz_coe = opt.fsolve(qtz_coe, 8)
 
-    pcoestish = lambda pkbar: phaseTransition(
-        pkbar, t=T_K, phase_1="coesite", phase_2="stishovite"
+    coe_stish = lambda P: eos.phaseTransition(
+        P, t=T_K, phase_1="coesite", phase_2="stishovite"
     )
-    pcoestish = opt.fsolve(pcoestish, 8)
+    P_coe_stish = opt.fsolve(coe_stish, 8)
 
     # Pressure of transition Fe2SiO4 polymorphs
-    pfaringHol_P = lambda pkbar: phaseTransition(
-        pkbar, t=T_K, phase_1="fayalite", phase_2="ringwoodite"
+    fay_ring = lambda P: eos.phaseTransition(
+        P, t=T_K, phase_1="fayalite", phase_2="ringwoodite"
     )
-    pfaringHol_P = opt.fsolve(pfaringHol_P, 8)
+    P_fay_ring = opt.fsolve(fay_ring, 8)
 
     # VdP SiO2 polymorphs
-    *_, vdpqz = eos.teosth(phase="quartz", pkbar=min(pgpa * 10, pqzcoe), t=T_K)
-    qlandau = eos.landauhppressure(phase="quartz", pkbar=min(pgpa * 10, pqzcoe), t=T_K)
-    dvdpSiO2Hol_P = vdpqz + qlandau
-    if pgpa > 0.1 * pqzcoe:
-        vdcoe = (
-            eos.teosth(phase="coesite", pkbar=min(pgpa * 10, pcoestish), t=T_K)[4]
-            - eos.teosth(phase="coesite", pkbar=pqzcoe, t=T_K)[4]
+    *_, VdP_qtz = eos.tait_eos_pressure(phase="quartz", pkbar=min(p_kbar, P_qtz_coe), t=T_K)
+    Gibbs_landau = eos.landau_P_dependent(phase="quartz", pkbar=min(p_kbar, P_qtz_coe), t=T_K)
+    dVdP_qtz = VdP_qtz + Gibbs_landau
+    if p_kbar > P_qtz_coe:
+        VdP_coe = (
+            eos.tait_eos_pressure(phase="coesite", pkbar=min(p_kbar, P_coe_stish), t=T_K)[4]
+            - eos.tait_eos_pressure(phase="coesite", pkbar=P_qtz_coe, t=T_K)[4]
         )
-        dvdpSiO2Hol_P = dvdpSiO2Hol_P + vdcoe
-        if pgpa > 0.1 * pcoestish:
-            vdpstish = (
-                eos.teosth(phase="stishovite", pkbar=pgpa * 10, t=T_K)[4]
-                - eos.teosth(phase="stishovite", pkbar=pcoestish, t=T_K)[4]
+        dVdP_qtz = dVdP_qtz + VdP_coe
+        if p_kbar > P_coe_stish:
+            VdP_stish = (
+                eos.tait_eos_pressure(phase="stishovite", pkbar=p_kbar, t=T_K)[4]
+                - eos.tait_eos_pressure(phase="stishovite", pkbar=P_coe_stish, t=T_K)[4]
             )
-            dvdpSiO2Hol_P = dvdpSiO2Hol_P + vdpstish
+            dVdP_qtz = dVdP_qtz + VdP_stish
 
     # VdP Fe2SiO4 polymorphs
-    *_, vdpfa = eos.teosth(phase="fayalite", pkbar=min(pgpa * 10, pfaringHol_P), t=T_K)
-    dvdpFe2SiO4Hol_P = vdpfa
-    if pgpa > 0.1 * pfaringHol_P:
-        vdpring = (
-            eos.teosth(phase="ringwoodite", pkbar=pgpa * 10, t=T_K)[4]
-            - eos.teosth(phase="ringwoodite", pkbar=pfaringHol_P, t=T_K)[4]
+    *_, VdP_fay = eos.tait_eos_pressure(phase="fayalite", pkbar=min(p_kbar, P_fay_ring), t=T_K)
+    dvdpFe2SiO4Hol_P = vVdP_fay
+    if p_kbar > P_fay_ring:
+        VdP_ring = (
+            eos.tait_eos_pressure(phase="ringwoodite", pkbar=p_kbar, t=T_K)[4]
+            - eos.tait_eos_pressure(phase="ringwoodite", pkbar=P_fay_ring, t=T_K)[4]
         )
-        dvdpFe2SiO4Hol_P = dvdpFe2SiO4Hol_P + vdpring
+        dvdpFe2SiO4 = dvdpFe2SiO4Hol_P + VdP_ring
 
     # VdP magnetite
-    vdpmt = eos.teosth(phase="magnetite", pkbar=pgpa * 10, t=T_K)[4]
+    VdP_mt = eos.tait_eos_pressure(phase="magnetite", pkbar=p_kbar, t=T_K)[4]
 
-    return 3e3 * dvdpSiO2Hol_P + 2e3 * vdpmt - 3e3 * dvdpFe2SiO4Hol_P
-
-
-def phaseTransition(pkbar, t, phase_1, phase_2):
-
-    results = []
-
-    for phase in [phase_1, phase_2]:
-
-        h = getattr(eos.EOSparams, phase)["h"]
-        s = getattr(eos.EOSparams, phase)["s"] / 1e3
-
-        Gibbs = (
-            h + eos.CpHoll(phase=phase, t=t) - t * (s + eos.CpTHoll(phase=phase, t=t))
-        )
-        *_, vdp = eos.teosth(phase=phase, pkbar=pkbar, t=t)
-
-        Gibbs = Gibbs + vdp
-
-        if phase in ["quartz", "magnetite"]:
-
-            Gibbs = Gibbs + eos.landauhp1bar(phase=phase, pkbar=pkbar, t=t)
-
-        results.append(Gibbs)
-
-    return results[0] - results[1]
+    return 3e3 * dVdP_qtz + 2e3 * VdP_mt - 3e3 * dvdpFe2SiO4
 
 
 def QFM_1bar(T_K):
