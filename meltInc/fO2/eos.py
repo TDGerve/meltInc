@@ -248,8 +248,9 @@ def landau(phase, pkbar, t, **kwargs):
     and
     Holland and Powell, 1990
 
-    see also FMQ buffer details and references at:
+    Rewritten according to:
     https://fo2.rses.anu.edu.au/fo2app/
+    (see FMQ buffer details and references)
 
     Parameters
     ----------
@@ -290,7 +291,7 @@ def landau(phase, pkbar, t, **kwargs):
     return G_pressure_dependent
 
 
-def landau_P_dependent(phase, pkbar, t, holland=True):
+def landau_P_dependent(phase, pkbar, t, holland=False):
     """
     Pressure dependent excess Gibbs free energy from Landau theory
 
