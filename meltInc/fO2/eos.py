@@ -239,9 +239,9 @@ def entropy(phase, t, tref=298.15):
     return float(entropy)
 
 
-def landau_P_dependent(phase, pkbar, t):
+def landau(phase, pkbar, t, **kwargs):
     """
-    Pressure contribution to excess Gibbs free energy from Landau theory.
+    Excess Gibbs free energy from Landau theory.
 
     Based on:
     Holland and Powell, 1998, p.312
@@ -259,14 +259,18 @@ def landau_P_dependent(phase, pkbar, t):
         Pressure in kilobar
     t       int, float
         Temperature in Kelvin
+    vmax    int, float
+        Optional, maximum volume of disorder. Set to 0 to calculate the pressure independent contribution.
 
     Returns
     -------
     float
         Pressure dependent contribution to the excess Gibbs free enery from Landau theory
     """
+    vmax_default = getattr(EOSparams, phase)["vmax"] 
+    vmax = kwargs.get("vmax", vmax_default)
 
-    smax, vmax, tc0 = [getattr(EOSparams, phase)[i] for i in ["smax", "vmax", "Tc0"]]
+    smax, tc0 = [getattr(EOSparams, phase)[i] for i in ["smax", "Tc0"]]
 
     Q2_0 = np.sqrt(1 - 298.15 / tc0)
 
@@ -279,14 +283,50 @@ def landau_P_dependent(phase, pkbar, t):
         Q2 = np.sqrt((tc - t) / tc0)
 
     G_pressure_dependent = (
-        smax * (tc0 * (Q2 + (Q2 ** 3 - Q2_0 ** 3) / 3) - tc * Q2 - t * (Q2_0 - Q2))
+        smax * (tc0 * (Q2_0 + (Q2 ** 3 - Q2_0 ** 3) / 3) - tc * Q2 - t * (Q2_0 - Q2))
         + pkbar * vmax * Q2_0
     )
 
     return G_pressure_dependent
 
 
-def landau_total(phase, pkbar, t):
+def landau_P_dependent(phase, pkbar, t, holland=True):
+    """
+    Pressure dependent excess Gibbs free energy from Landau theory
+
+    Based on:
+    Holland and Powell, 1998, p.312
+    and
+    Holland and Powell, 1990
+
+    see also FMQ buffer details and references at:
+    https://fo2.rses.anu.edu.au/fo2app/
+
+    Parameters
+    ----------
+    phase   str
+        Mineral phase
+    t       int, float
+        Temperature in Kelvin
+    pkbar   int, float
+        Pressure in kilobars
+
+    Returns
+    -------
+    float
+        Pressure contribution to excess Gibbs free enery from Landau theory
+    """
+    if holland:
+        landau_total = landau_Holland(phase, pkbar, t)
+        landau_1bar = landau_Holland(phase, 1e-3, t, vmax=0)
+    else:
+        landau_total = landau(phase, pkbar, t)
+        landau_1bar = landau(phase, 1e-3, t, vmax=0)
+
+    return landau_total - landau_1bar
+
+
+def landau_Holland(phase, pkbar, t, **kwargs):
     """
     Excess Gibbs free energy from Landau theory
 
@@ -307,8 +347,10 @@ def landau_total(phase, pkbar, t):
         Excess Gibbs free enery from Landau theory
     """
 
-    smax, vmax, tc0, a0, K0 = [
-        getattr(EOSparams, phase)[i] for i in ["smax", "vmax", "Tc0", "a0", "K0"]
+    vmax_default = getattr(EOSparams, phase)["vmax"] 
+    vmax = kwargs.get("vmax", vmax_default)
+    smax, tc0, a0, K0 = [
+        getattr(EOSparams, phase)[i] for i in ["smax", "Tc0", "a0", "K0"]
     ]
 
     # Landau critical temperature
@@ -337,33 +379,6 @@ def landau_total(phase, pkbar, t):
     delta_G_landau = smax * ((t - tc0) * Q2 + (tc * Q2**3) / 3)
 
     return h - t * s + vtdP + delta_G_landau
-
-
-# def landau_P_independent(phase, pkbar, t):
-#     """
-#     Pressure independent contribution to the Landau free energy of ordering.
-#     Holland and Powell (2011) p.312 with Vmax (maximum volume of disorder) = 0
-
-#     Doesn't match landau_total and landau_P_dependent
-#     """
-#     smax, tc0, a0, K0 = [getattr(EOSparams, phase)[i] for i in ["smax", "Tc0", "a0", "K0"]]
-
-#     Q2_0 = np.sqrt(1 - 298.15 / tc0)
-#     tc = tc0
-#     if t > tc:
-#         Q2 = 0
-#     else:
-#         Q2 = np.sqrt((tc - t) / tc0)
-
-#     h = smax * tc0 * (Q2_0 - Q2_0 ** 3 / 3)
-#     s = smax * Q2_0
-
-#     vt = - 20 * a0 * (np.sqrt(t) - np.sqrt(298))
-#     vtdP = vt * K0 / 3 * ((1 + 4 * pkbar / K0)**(3 / 4) - 1)    
-
-#     delta_G_landau = smax * ((t - tc0) * Q2 + (tc * Q2 ** 3) / 3)
-
-#     return h - t * s + vtdP + delta_G_landau
 
 
 def phaseTransition(pkbar, t, phase_1, phase_2):
@@ -399,7 +414,7 @@ def phaseTransition(pkbar, t, phase_1, phase_2):
 
         if phase in ["quartz", "magnetite"]:
 
-            Gibbs = Gibbs + landau_total(phase=phase, pkbar=pkbar, t=t)
+            Gibbs = Gibbs + landau(phase=phase, pkbar=pkbar, t=t)
 
         results.append(Gibbs)
 
