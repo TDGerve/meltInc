@@ -291,17 +291,10 @@ def landau(phase, pkbar, t, **kwargs):
     return G_pressure_dependent
 
 
-def landau_P_dependent(phase, pkbar, t, holland=False):
+def landau_P_dependent(phase, pkbar, t, holland=True):
     """
-    Pressure dependent excess Gibbs free energy from Landau theory
-
-    Based on:
-    Holland and Powell, 1998, p.312
-    and
-    Holland and Powell, 1990
-
-    see also FMQ buffer details and references at:
-    https://fo2.rses.anu.edu.au/fo2app/
+    Pressure dependent excess Gibbs free energy from Landau theory.
+    Calculated by subtracting the pressure independent contribution (with vmax = 0) from the total.
 
     Parameters
     ----------
@@ -319,10 +312,10 @@ def landau_P_dependent(phase, pkbar, t, holland=False):
     """
     if holland:
         landau_total = landau_Holland(phase, pkbar, t)
-        landau_1bar = landau_Holland(phase, 1e-3, t, vmax=0)
+        landau_1bar = landau_Holland(phase, 0, t, vmax=0)
     else:
         landau_total = landau(phase, pkbar, t)
-        landau_1bar = landau(phase, 1e-3, t, vmax=0)
+        landau_1bar = landau(phase, 0, t, vmax=0)
 
     return landau_total - landau_1bar
 
