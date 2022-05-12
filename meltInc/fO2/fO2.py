@@ -8,7 +8,7 @@ from scipy.constants import R
 import itertools as it
 
 
-def QFM_pressure(T_K, Pbar):
+def QFM_pressure_phaseTransitions(T_K, Pbar):
     """
     Pressure contribution to the chemical potential of oxygen (fO2) at QFM
     """
@@ -63,6 +63,129 @@ def QFM_pressure(T_K, Pbar):
     VdP_mt = eos.tait_eos_pressure(phase="magnetite", pkbar=p_kbar, t=T_K)[4]
 
     return 3e3 * VdP_qtz + 2e3 * VdP_mt - 3e3 * VdP_Fe2SiO4
+
+
+
+
+def QFM_VdP(T_K, Pbar):
+
+    p_kbar = Pbar / 1e3
+
+    # VdP SiO2
+    *_, VdP_qtz = eos.tait_eos_pressure(phase="quartz", pkbar=p_kbar, t=T_K)
+    Gibbs_landau = eos.landau_P_dependent(phase="quartz", pkbar=p_kbar, t=T_K)
+    VdP_qtz = VdP_qtz + Gibbs_landau
+
+    *_, VdP_fay = eos.tait_eos_pressure(phase="fayalite", pkbar=p_kbar, t=T_K)
+
+    *_, VdP_mt = eos.tait_eos_pressure(phase="magnetite", pkbar=p_kbar, t=T_K)
+
+    return VdP_qtz, VdP_mt, VdP_fay
+
+
+def QFM_VdP_phaseTransitions(T_K, Pbar):
+
+    VdP_SiO2, VdP_mt, VdP_Fe2SiO4 = QFM_VdP(T_K, Pbar)
+
+    p_kbar = Pbar / 1e3
+
+        # Pressure of transition SiO2 polymorphs
+    qtz_coe = lambda P: eos.phaseTransition(
+        P, t=T_K, phase_1="quartz", phase_2="coesite"
+    )
+    P_qtz_coe = opt.fsolve(qtz_coe, 8)
+
+    coe_stish = lambda P: eos.phaseTransition(
+        P, t=T_K, phase_1="coesite", phase_2="stishovite"
+    )
+    P_coe_stish = opt.fsolve(coe_stish, 8)
+
+    # Pressure of transition Fe2SiO4 polymorphs
+    fay_ring = lambda P: eos.phaseTransition(
+        P, t=T_K, phase_1="fayalite", phase_2="ringwoodite"
+    )
+    P_fay_ring = opt.fsolve(fay_ring, 8)
+
+    if p_kbar > P_qtz_coe:
+        VdP_coe = (
+            eos.tait_eos_pressure(phase="coesite", pkbar=min(p_kbar, P_coe_stish), t=T_K)[4]
+            - eos.tait_eos_pressure(phase="coesite", pkbar=P_qtz_coe, t=T_K)[4]
+        )
+        VdP_SiO2 = VdP_SiO2 + VdP_coe
+        if p_kbar > P_coe_stish:
+            VdP_stish = (
+                eos.tait_eos_pressure(phase="stishovite", pkbar=p_kbar, t=T_K)[4]
+                - eos.tait_eos_pressure(phase="stishovite", pkbar=P_coe_stish, t=T_K)[4]
+            )
+            VdP_SiO2 = VdP_SiO2 + VdP_stish
+
+    # VdP Fe2SiO4 polymorphs
+    if p_kbar > P_fay_ring:
+        VdP_ring = (
+            eos.tait_eos_pressure(phase="ringwoodite", pkbar=p_kbar, t=T_K)[4]
+            - eos.tait_eos_pressure(phase="ringwoodite", pkbar=P_fay_ring, t=T_K)[4]
+        )
+        VdP_Fe2SiO4 = VdP_Fe2SiO4 + VdP_ring
+    
+    return VdP_SiO2, VdP_mt, VdP_Fe2SiO4
+
+
+def QFM_muO2_P(T_K, Pbar):
+    """
+    Calculate the chemical potential of O2 at pressure P and temperature T from the reaction:
+
+    3 * Fe2SiO4 + O2 = 3 * SiO2 + 2 * Fe3O4
+
+    Parameters
+    ----------
+    T_K     int, float
+        Temperature in Kelvin
+    Pbar    int, float
+        Pressure in bar
+
+    Returns
+    -------
+    float
+        Chemical potential of O2    
+    """
+
+
+    VdP_quartz, VdP_magnetite, VdP_fayalite = QFM_VdP(T_K, Pbar)
+    #kiloJoule to Joule
+    muO2 = 1e3 * (3 * VdP_quartz + 2 * VdP_magnetite - 3 * VdP_fayalite)
+    
+    return muO2
+
+
+def QFM_muO2_P_phaseTransitions(T_K, Pbar):
+
+    Pbar_is_int = isinstance(Pbar, (int, float))
+    T_K_is_int = isinstance(T_K, (int, float))
+
+    # If P and T are not both single numbers
+    if not (Pbar_is_int and T_K_is_int):
+    
+        # If only one variable, P or T, is integer-like
+        if bool(Pbar_is_int) ^ bool(T_K_is_int):
+
+            # Cycle the short variable
+            T_K = [np.array(T_K), it.cycle(np.array([T_K]))][T_K_is_int]
+            Pbar = [np.array(Pbar), it.cycle(np.array([Pbar]))][Pbar_is_int]
+
+
+        muO2 = np.zeros(shape=[len(T_K),])
+
+        for i, (temperature, pressure) in enumerate(zip(T_K, Pbar)):
+            VdP_quartz, VdP_magnetite, VdP_fayalite = QFM_VdP_phaseTransitions(temperature, pressure)
+            #kiloJoule to Joule
+            muO2[i] = 1e3 * (3 * VdP_quartz + 2 * VdP_magnetite - 3 * VdP_fayalite)
+
+    else:
+        VdP_quartz, VdP_magnetite, VdP_fayalite = QFM_VdP_phaseTransitions(T_K, Pbar)
+        muO2 = 1e3 * (3 * VdP_quartz + 2 * VdP_magnetite - 3 * VdP_fayalite)
+
+    return muO2  
+
 
 
 def QFM_1bar(T_K):
@@ -120,6 +243,21 @@ def fO2QFM_1bar(T_K, logshift=0):
 
     return np.exp(mu_O2 / (R * T_K)) * offset
 
+def fO2QFM_new(logshift, T_K, Pbar, phaseTransitions=False):
+    """
+    
+    """
+    offset = 10 ** logshift
+
+    if not phaseTransitions:
+        muO2_pressure = QFM_muO2_P(T_K, Pbar)
+    else:
+        muO2_pressure = QFM_muO2_P_phaseTransitions(T_K, Pbar)
+
+    muO2_1bar = QFM_1bar(T_K)
+
+    return np.exp((muO2_1bar + muO2_pressure) / (R * T_K)) * offset
+
 
 def fO2QFM(logshift, T_K, Pbar):
     """
@@ -161,10 +299,10 @@ def fO2QFM(logshift, T_K, Pbar):
         )
 
         for i, (temperature, pressure) in enumerate(zip(T_K, Pbar)):
-            QFM_pressure_component[i] = QFM_pressure(temperature, pressure)
+            QFM_pressure_component[i] = QFM_pressure_phaseTransitions(temperature, pressure)
 
     else:
-        QFM_pressure_component = QFM_pressure(T_K, Pbar)
+        QFM_pressure_component = QFM_pressure_phaseTransitions(T_K, Pbar)
 
     return np.exp((QFM_1bar(T_K) + QFM_pressure_component) / (R * T_K)) * offset
 
