@@ -198,11 +198,13 @@ def enthalpy(phase, t, tref=298.15):
         getattr(EOSparams, phase)[i] for i in ["cp_a", "cp_b", "cp_c", "cp_d"]
     ]
 
-    T = sym.Symbol("T")
-    Cp = a + b * T + c * T ** -2 + d * T ** (-1 / 2)
-    enthalpy = sym.integrate(Cp, (T, tref, t)).evalf()
+    # T = sym.Symbol("T")
+    # Cp = a + b * T + c * T ** -2 + d * T ** (-1 / 2)
+    integral = lambda T: a * T + 0.5 * b * T**2 - c * T**-1 + 2 * d * T**(1/2)
+    enthalpy = integral(t) - integral(tref)
+    # enthalpy = float(sym.integrate(Cp, (T, tref, t)).evalf())
 
-    return float(enthalpy)
+    return enthalpy
 
 
 def entropy(phase, t, tref=298.15):
@@ -232,11 +234,13 @@ def entropy(phase, t, tref=298.15):
         getattr(EOSparams, phase)[i] for i in ["cp_a", "cp_b", "cp_c", "cp_d"]
     ]
 
-    T = sym.Symbol("T")
-    CpT = a / T + b + c * T ** -3 + d * T ** (-3 / 2)
-    entropy = sym.integrate(CpT, (T, tref, t)).evalf()
+    # T = sym.Symbol("T")
+    # CpT = a / T + b + c * T ** -3 + d * T ** (-3 / 2)
+    integral = lambda T: a * np.log(T) + b * T - c / 2 * T**-2 - 2 * d * T**(-1/2)
+    entropy = integral(t) - integral(tref)
+    # entropy = float(sym.integrate(CpT, (T, tref, t)).evalf())
 
-    return float(entropy)
+    return entropy
 
 
 def landau(phase, pkbar, T_K, **kwargs):

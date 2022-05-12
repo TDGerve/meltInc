@@ -188,7 +188,7 @@ def QFM_muO2_P_phaseTransitions(T_K, Pbar):
 
 
 
-def QFM_1bar(T_K):
+def muO2_QFM_1bar(T_K):
     """
     calculate chemical potential of oxygen at QFM a 1 bar. Equation from O'Neill 1987
 
@@ -237,11 +237,12 @@ def fO2QFM_1bar(T_K, logshift=0):
     -------
     fO2
     """
-    mu_O2 = QFM_1bar(T_K)
+    mu_O2 = muO2_QFM_1bar(T_K)
 
     offset = 10 ** logshift
 
     return np.exp(mu_O2 / (R * T_K)) * offset
+
 
 def fO2QFM(logshift, T_K, Pbar, phaseTransitions=False):
     """
@@ -254,7 +255,7 @@ def fO2QFM(logshift, T_K, Pbar, phaseTransitions=False):
     else:
         muO2_pressure = QFM_muO2_P_phaseTransitions(T_K, Pbar)
 
-    muO2_1bar = QFM_1bar(T_K)
+    muO2_1bar = muO2_QFM_1bar(T_K)
 
     return np.exp((muO2_1bar + muO2_pressure) / (R * T_K)) * offset
 
@@ -304,7 +305,7 @@ def fO2QFM_OLD(logshift, T_K, Pbar):
     else:
         QFM_pressure_component = QFM_pressure_phaseTransitions(T_K, Pbar)
 
-    return np.exp((QFM_1bar(T_K) + QFM_pressure_component) / (R * T_K)) * offset
+    return np.exp((muO2_QFM_1bar(T_K) + QFM_pressure_component) / (R * T_K)) * offset
 
 
 def FeRedox_KC(composition, T_K, fO2, Pbar):
