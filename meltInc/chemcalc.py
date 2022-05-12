@@ -85,6 +85,7 @@ def cations():
             "NiO": 1,
             "BaO": 1,
             "CuO": 1,
+            "H2O": 1
         }
     )
 
@@ -110,6 +111,7 @@ def oxygens():
             "NiO": 1,
             "BaO": 1,
             "CuO": 1,
+            "H2O": 2
         }
     )
 
@@ -117,7 +119,7 @@ def oxygens():
 def componentFractions(
     composition: pd.DataFrame,
     type: str = "oxide",
-    normalise: bool = False,
+    normalise = False,
     normFactor: int = 1,
     elements: List[str] = None,
 ):
@@ -186,7 +188,7 @@ def componentFractions(
 
         if normalise == "total":
 
-            components_O = components + ["O"]
+            components_O = np.append(components, "O")
 
             cation_proportions["total"] = cation_proportions.loc[:, components_O].sum(
                 axis=1

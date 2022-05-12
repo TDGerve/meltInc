@@ -243,7 +243,7 @@ def fO2QFM_1bar(T_K, logshift=0):
 
     return np.exp(mu_O2 / (R * T_K)) * offset
 
-def fO2QFM_new(logshift, T_K, Pbar, phaseTransitions=False):
+def fO2QFM(logshift, T_K, Pbar, phaseTransitions=False):
     """
     
     """
@@ -259,7 +259,7 @@ def fO2QFM_new(logshift, T_K, Pbar, phaseTransitions=False):
     return np.exp((muO2_1bar + muO2_pressure) / (R * T_K)) * offset
 
 
-def fO2QFM(logshift, T_K, Pbar):
+def fO2QFM_OLD(logshift, T_K, Pbar):
     """
     calculate oxygen fugacity at QFM offset by arbitraty log units.
 
