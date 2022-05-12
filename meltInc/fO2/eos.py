@@ -306,7 +306,7 @@ def landau(phase, pkbar, T_K, **kwargs):
     return G_Landau
 
 
-def landau_P_dependent(phase, pkbar, t, holland=True):
+def landau_P_dependent(phase, pkbar, t, holland=False):
     """
     Pressure dependent excess Gibbs free energy from Landau theory.
     Calculated by subtracting the pressure independent contribution (with vmax = 0) from the total.
@@ -395,7 +395,7 @@ def landau_Holland(phase, pkbar, T_K, **kwargs):
 
     # Convert to float if there is only one item
     if len(G_excess) == 1:
-        G_excess == G_excess.item()
+        G_excess = G_excess.item()
 
     return G_excess
 
