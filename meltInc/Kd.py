@@ -81,7 +81,7 @@ def SiO2_A_toplis(liquid, H2O=None):
     # Equation 11
     SiO2_A = molar_SiO2 + Phi * (molar_Na2O + molar_K2O)  
 
-    if H2O:
+    if H2O is not None:
         SiO2_A = SiO2_A + 0.8 * H2O  # equation 14
 
     return SiO2_A
@@ -126,8 +126,8 @@ def KdToplis_iterator(
     fo_converge = kwargs.setdefault("fo_converge", fo_converge_default)
 
     melts = liquid.copy()
-    if H2O:
-        melts["H2O"] = H2O
+    if (H2O is None) & ('H2O' in melts.columns):
+        H2O = melts["H2O"]
 
     SiO2mol_A = SiO2_A_toplis(liquid, H2O)
 
@@ -182,7 +182,7 @@ def Kd_Blundy(forsterite, Fe3Fe2_liquid, T_K):
     Blundy et al., 2020, equation 8
     """
 
-    Fe3FeTotal = 1 / (1 + 1 / Fe3Fe2_liquid)
+    Fe3FeTotal = Fe3Fe2_liquid / (1 + Fe3Fe2_liquid)
 
     return 0.3642 * (1 - Fe3FeTotal) * np.exp(312.7 * (1 - 2 * forsterite) / T_K)
     

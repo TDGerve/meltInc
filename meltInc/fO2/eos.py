@@ -198,11 +198,13 @@ def enthalpy(phase, t, tref=298.15):
         getattr(EOSparams, phase)[i] for i in ["cp_a", "cp_b", "cp_c", "cp_d"]
     ]
 
-    T = sym.Symbol("T")
-    Cp = a + b * T + c * T ** -2 + d * T ** (-1 / 2)
-    enthalpy = sym.integrate(Cp, (T, tref, t)).evalf()
+    # T = sym.Symbol("T")
+    # Cp = a + b * T + c * T ** -2 + d * T ** (-1 / 2)
+    integral = lambda T: a * T + 0.5 * b * T**2 - c * T**-1 + 2 * d * T**(1/2)
+    enthalpy = integral(t) - integral(tref)
+    # enthalpy = float(sym.integrate(Cp, (T, tref, t)).evalf())
 
-    return float(enthalpy)
+    return enthalpy
 
 
 def entropy(phase, t, tref=298.15):
@@ -232,14 +234,16 @@ def entropy(phase, t, tref=298.15):
         getattr(EOSparams, phase)[i] for i in ["cp_a", "cp_b", "cp_c", "cp_d"]
     ]
 
-    T = sym.Symbol("T")
-    CpT = a / T + b + c * T ** -3 + d * T ** (-3 / 2)
-    entropy = sym.integrate(CpT, (T, tref, t)).evalf()
+    # T = sym.Symbol("T")
+    # CpT = a / T + b + c * T ** -3 + d * T ** (-3 / 2)
+    integral = lambda T: a * np.log(T) + b * T - c / 2 * T**-2 - 2 * d * T**(-1/2)
+    entropy = integral(t) - integral(tref)
+    # entropy = float(sym.integrate(CpT, (T, tref, t)).evalf())
 
-    return float(entropy)
+    return entropy
 
 
-def landau(phase, pkbar, t, **kwargs):
+def landau(phase, pkbar, T_K, **kwargs):
     """
     Excess Gibbs free energy from Landau theory.
 
@@ -268,6 +272,9 @@ def landau(phase, pkbar, t, **kwargs):
     float
         Pressure dependent contribution to the excess Gibbs free enery from Landau theory
     """
+    t = np.array([])
+    t = np.append(t, T_K)
+
     vmax_default = getattr(EOSparams, phase)["vmax"] 
     vmax = kwargs.get("vmax", vmax_default)
 
@@ -278,17 +285,25 @@ def landau(phase, pkbar, t, **kwargs):
     # Landau critical temperature at pkbar
     tc = tc0 + pkbar * vmax / smax
 
-    if t > tc:
-        Q2 = 0
-    else:
-        Q2 = np.sqrt((tc - t) / tc0)
+    # if t > tc:
+    #     Q2 = 0
+    # else:
+    #     Q2 = np.sqrt((tc - t) / tc0)
 
-    G_pressure_dependent = (
+    Q2 = np.zeros(shape=[len(t),])
+    if any(t < tc):
+        Q2 = np.where(t > tc, 0, np.sqrt((tc - t) / tc0))
+
+    G_Landau = (
         smax * (tc0 * (Q2_0 + (Q2 ** 3 - Q2_0 ** 3) / 3) - tc * Q2 - t * (Q2_0 - Q2))
         + pkbar * vmax * Q2_0
     )
 
-    return G_pressure_dependent
+    # Convert to float if there is only one item
+    if len(G_Landau) == 1:
+        G_Landau = G_Landau.item()
+
+    return G_Landau
 
 
 def landau_P_dependent(phase, pkbar, t, holland=True):
@@ -320,7 +335,7 @@ def landau_P_dependent(phase, pkbar, t, holland=True):
     return landau_total - landau_1bar
 
 
-def landau_Holland(phase, pkbar, t, **kwargs):
+def landau_Holland(phase, pkbar, T_K, **kwargs):
     """
     Excess Gibbs free energy from Landau theory
 
@@ -340,6 +355,8 @@ def landau_Holland(phase, pkbar, t, **kwargs):
     float
         Excess Gibbs free enery from Landau theory
     """
+    t = np.array([])
+    t = np.append(t, T_K)
 
     vmax_default = getattr(EOSparams, phase)["vmax"] 
     vmax = kwargs.get("vmax", vmax_default)
@@ -352,10 +369,12 @@ def landau_Holland(phase, pkbar, t, **kwargs):
     # Q: oder paramter in the landau model
     Q2_0 = np.sqrt(1 - 298.15 / tc0)
     
-    if t > tc:
-        Q2 = 0
-    else:
-        Q2 = np.sqrt((tc - t) / tc0)
+    # if t > tc:
+    #     Q2 = 0
+    # else:
+    #     Q2 = np.sqrt((tc - t) / tc0)
+
+    Q2 = np.where(t > tc, 0, np.sqrt((tc - t) / tc0))
 
     # Bulk modulus
     K = K0 * (1 - 1.5e-4 * (t - 298))
@@ -372,7 +391,13 @@ def landau_Holland(phase, pkbar, t, **kwargs):
 
     delta_G_landau = smax * ((t - tc0) * Q2 + (tc * Q2**3) / 3)
 
-    return h - t * s + vtdP + delta_G_landau
+    G_excess = h - t * s + vtdP + delta_G_landau
+
+    # Convert to float if there is only one item
+    if len(G_excess) == 1:
+        G_excess == G_excess.item()
+
+    return G_excess
 
 
 def phaseTransition(pkbar, t, phase_1, phase_2):
@@ -408,7 +433,7 @@ def phaseTransition(pkbar, t, phase_1, phase_2):
 
         if phase in ["quartz", "magnetite"]:
 
-            Gibbs = Gibbs + landau(phase=phase, pkbar=pkbar, t=t)
+            Gibbs = Gibbs + landau(phase=phase, pkbar=pkbar, T_K=t)
 
         results.append(Gibbs)
 
