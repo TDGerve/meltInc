@@ -1,4 +1,4 @@
-from . import fO2
+from . import fO2_calc as fO2
 from .. import chemcalc as cc
 import warnings as w
 import numpy as np
