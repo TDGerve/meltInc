@@ -170,7 +170,6 @@ def tait_eos_pressure(phase, pkbar, t, tref=298.15, **kwargs):
     return [Pth, a, b, c, VdP]
 
 
-
 def enthalpy(phase, t, tref=298.15):
     """
     Enthalpy as Cp.dT, integrated from T to T(reference), with heat capacity as:
