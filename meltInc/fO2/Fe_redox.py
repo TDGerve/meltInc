@@ -1,4 +1,4 @@
-from . import fO2_calc as fO2
+from . import fO2
 from .. import chemcalc as cc
 import warnings as w
 import numpy as np
@@ -130,6 +130,6 @@ def FeRedox_QFM(composition, T_K, Pbar, logshift=0, model="Borisov"):
     model_dict = {"KressCarmichael": FeRedox_KC, "Borisov": FeRedox_Boris}
     equation = model_dict[model]
 
-    fO2 = fO2.fO2_QFM(logshift, T_K, Pbar)
+    fO2_bar = fO2.fO2_QFM(logshift, T_K, Pbar)
 
-    return equation(composition, T_K, fO2, Pbar)
+    return equation(composition, T_K, fO2_bar, Pbar)
