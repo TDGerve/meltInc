@@ -78,7 +78,7 @@ def muO2_QFM_P(T_K, Pbar):
     Pbar_is_int = isinstance(Pbar, (int, float))
     T_K_is_int = isinstance(T_K, (int, float))
 
-    # If P and T are not both single numbers
+    # If P and T are not both numbers
     if not (Pbar_is_int and T_K_is_int):
     
         # If only one variable, P or T, is integer-like

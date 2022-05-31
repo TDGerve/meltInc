@@ -8,10 +8,8 @@ from scipy.constants import R
 from typing import List
 
 
-def elementweights():
-    """Returns a pd.Series with weights of common elements"""
-
-    return pd.Series(
+"""Returns a pd.Series with weights of common elements"""
+elementweights = pd.Series(
         {
             "Si": 28.085,
             "Al": 26.981,
@@ -34,40 +32,31 @@ def elementweights():
         }
     )
 
-
-def oxideweights():
-    """Returns a pd.Series with weights of common oxides"""
-
-    element = elementweights()
-    O = element["O"]
-
-    return pd.Series(
+"""Returns a pd.Series with weights of common oxides"""
+oxideweights = pd.Series(
         {
-            "SiO2": element["Si"] + 2 * O,
-            "Al2O3": 2 * element["Al"] + 3 * O,
-            "MgO": element["Mg"] + O,
-            "CaO": element["Ca"] + O,
-            "FeO": element["Fe"] + O,
-            "Na2O": 2 * element["Na"] + O,
-            "K2O": element["K"] * 2 + O,
-            "MnO": element["Mn"] + O,
-            "TiO2": element["Ti"] + 2 * O,
-            "SO3": element["S"] + 3 * O,
-            "P2O5": element["P"] * 2 + O * 5,
-            "Cl": element["Cl"],
-            "Cr2O3": element["Cr"] * 2 + 3 * O,
-            "NiO": element["Ni"] + O,
-            "BaO": element["Ba"] + O,
-            "CuO": element["Cu"] + O,
-            "H2O": element["H"] * 2 + O,
+            "SiO2": elementweights["Si"] + 2 * elementweights["O"],
+            "Al2O3": 2 * elementweights["Al"] + 3 * elementweights["O"],
+            "MgO": elementweights["Mg"] + elementweights["O"],
+            "CaO": elementweights["Ca"] + elementweights["O"],
+            "FeO": elementweights["Fe"] + elementweights["O"],
+            "Na2O": 2 * elementweights["Na"] + elementweights["O"],
+            "K2O": elementweights["K"] * 2 + elementweights["O"],
+            "MnO": elementweights["Mn"] + elementweights["O"],
+            "TiO2": elementweights["Ti"] + 2 * elementweights["O"],
+            "SO3": elementweights["S"] + 3 * elementweights["O"],
+            "P2O5": elementweights["P"] * 2 + elementweights["O"] * 5,
+            "Cl": elementweights["Cl"],
+            "Cr2O3": elementweights["Cr"] * 2 + 3 * elementweights["O"],
+            "NiO": elementweights["Ni"] + elementweights["O"],
+            "BaO": elementweights["Ba"] + elementweights["O"],
+            "CuO": elementweights["Cu"] + elementweights["O"],
+            "H2O": elementweights["H"] * 2 + elementweights["O"],
         }
     )
 
-
-def cations():
-    """Returns a pd.Series with number of cations in common oxides"""
-
-    return pd.Series(
+"""Returns a pd.Series with number of cations in common oxides"""
+cations = pd.Series(
         {
             "SiO2": 1,
             "Al2O3": 2,
@@ -89,11 +78,8 @@ def cations():
         }
     )
 
-
-def oxygens():
-    """Returns a pd.Series with number of oxygen per cation in common oxides"""
-
-    return pd.Series(
+"""Returns a pd.Series with number of oxygen per cation in common oxides"""
+oxygens = pd.Series(
         {
             "SiO2": 2,
             "Al2O3": 1.5,
@@ -157,10 +143,10 @@ def componentFractions(
     if elements is not None:
         components = elements.copy()
     else:
-        components = list(oxideweights().index)
+        components = list(oxideweights.index)
     components = composition.columns.intersection(components)
 
-    molar_proportions = composition.loc[:, components].div(oxideweights()[components])
+    molar_proportions = composition.loc[:, components].div(oxideweights[components])
 
     if type == "oxide":
 
@@ -181,9 +167,9 @@ def componentFractions(
 
     if type == "cation":
 
-        cation_proportions = molar_proportions.mul(cations()[components])
+        cation_proportions = molar_proportions.mul(cations[components])
 
-        oxygen = cation_proportions.loc[:, components].mul(oxygens()[components])
+        oxygen = cation_proportions.loc[:, components].mul(oxygens[components])
         cation_proportions["O"] = oxygen.sum(axis=1)
 
         if normalise == "total":
@@ -217,7 +203,7 @@ def componentFractions(
             )
             cation_proportions["O"] = (
                 cation_proportions.loc[:, components]
-                .mul(oxygens()[components])
+                .mul(oxygens[components])
                 .sum(axis=1)
             )
 
@@ -238,14 +224,14 @@ def componentFractions(
             )
             cation_proportions["O"] = (
                 cation_proportions.loc[:, components]
-                .mul(oxygens()[components], axis=1)
+                .mul(oxygens[components], axis=1)
                 .sum(axis=1)
             )
 
         catDict = {
             i: j
             for i, j in zip(
-                list(oxideweights().index), list(elementweights().index)[:-1]
+                list(oxideweights.index), list(elementweights.index)[:-1]
             )
         }
         cation_proportions.rename(columns=catDict, inplace=True)

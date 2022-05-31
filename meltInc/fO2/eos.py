@@ -245,7 +245,7 @@ def landau(phase, pkbar, T_K, **kwargs):
     and
     Holland and Powell, 1990
 
-    Rewritten according to:
+    Rewritten according to Michael Anenberg:
     https://fo2.rses.anu.edu.au/fo2app/
     (see FMQ buffer details and references)
 
@@ -294,26 +294,30 @@ def landau(phase, pkbar, T_K, **kwargs):
     return G_Landau
 
 
-def landau_P_dependent(phase, pkbar, t, holland=False):
+def landau_P_dependent(phase, pkbar, t, formulation='anenberg'):
     """
     Pressure dependent excess Gibbs free energy from Landau theory.
     Calculated by subtracting the pressure independent contribution (with vmax = 0) from the total.
 
     Parameters
     ----------
-    phase   str
+    phase       :   str
         Mineral phase
-    t       int, float
+    t           :   int, float
         Temperature in Kelvin
-    pkbar   int, float
+    pkbar       :   int, float
         Pressure in kilobars
-
+    formulation :   str
+        'holland' for the formulation by Holland and Powell (1998), otherwise Michael Anenberg's
+        formulation will be used: 
+        https://fo2.rses.anu.edu.au/fo2app/ 
+        (see FMQ buffer details and references)
     Returns
     -------
     float
         Pressure contribution to excess Gibbs free enery from Landau theory
     """
-    if holland:
+    if formulation == 'holland':
         landau_total = landau_Holland(phase, pkbar, t)
         landau_1bar = landau_Holland(phase, 0, t, vmax=0)
     else:

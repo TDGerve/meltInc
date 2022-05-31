@@ -122,48 +122,26 @@ def TAS(labels=False, fontsize="medium", **kwargs):
         )
 
 
-def side_plots(fig, x_axis: bool, y_axis: bool, side=10, **kwargs):
-
-    widths = [(100,), (100. - side, side)][y_axis]
-    heights = [(100,), (side, 100. - side)][x_axis]
-
-    left, right = 0.12, 0.97
-    top, bottom = 0.97, 0.1
-    spacing = 0.03
-
-    grid = fig.add_gridspec(
-        ncols=1 + y_axis,
-        nrows=1 + x_axis,
-        width_ratios=widths,
-        height_ratios=heights,
-        left=left,
-        right=right,
-        bottom=bottom,
-        top=top,
-        hspace=spacing,
-        wspace=spacing,
-    )
-
-    ax = fig.add_subplot(grid[0 + x_axis, 0])
+def side_plots(ax, x_axis: bool=False, y_axis: bool=False, side=0.1, spacing=0.03, **kwargs):
 
     axes = []
 
     if x_axis:        
-        ax_kde_x = fig.add_subplot(grid[0, 0], sharex=ax)
+        ax_kde_x = ax.inset_axes([0, 1. + spacing, 1, side])
         axes.append(ax_kde_x)
 
         ax_kde_x.spines["left"].set_visible(False)
         ax_kde_x.yaxis.set_visible(False)
-        ax_kde_x.tick_params(axis="x", labelbottom=False, direction="in")
+        ax_kde_x.tick_params(axis="x", labelbottom=False, direction="in", **kwargs)
 
 
     if y_axis:
-        ax_kde_y = fig.add_subplot(grid[0 + x_axis, 1], sharey=ax)  
-        axes.append(ax_kde_y) 
-        
+        ax_kde_y = ax.inset_axes([1. + spacing, 0, side, 1])  
+        axes.append(ax_kde_y)
+       
         ax_kde_y.xaxis.set_visible(False)
         ax_kde_y.spines["bottom"].set_visible(False)
-        ax_kde_y.tick_params(axis="y", labelleft=False, direction="in")
+        ax_kde_y.tick_params(axis="y", labelleft=False, direction="in", **kwargs)
 
     
     for axis in axes:
@@ -174,5 +152,5 @@ def side_plots(fig, x_axis: bool, y_axis: bool, side=10, **kwargs):
         for spine in ["right", "top"]:
             axis.spines[spine].set_visible(False)
 
-    return ax, *axes
+    return axes
 

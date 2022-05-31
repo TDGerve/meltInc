@@ -20,13 +20,13 @@ def Phi_toplis(molar_SiO2, molar_Na2O, molar_K2O):
 
     molar_K2O : int or list-like
 
-
+ 
     Returns
     -------
         int or list-like
     """
 
-    if sum(np.array(molar_SiO2) > 60):
+    if sum(np.array(molar_SiO2) > 60) > 1:
         raise RuntimeError("SiO2 >60 mol% present")
 
     return (0.46 * (100 / (100 - molar_SiO2)) - 0.93) * (molar_Na2O + molar_K2O) + (
@@ -60,23 +60,15 @@ def SiO2_A_toplis(liquid, H2O=None):
     int or list-like
     """
 
-    oxides = cc.oxideweights()
+    oxides = cc.oxideweights
     components = oxides.index.intersection(liquid.columns)
 
     # Calculate melt molar concentrations
     # Molar fractions normalised to 1
     liq_molar_concentrations = cc.componentFractions(
-        liquid, type="oxide", normalise=True
+        liquid, type="oxide", normalise=True, normFactor=100
     )
-    # Total of the input composition
-    total = liquid.loc[:, components].sum(axis=1)
-    # Molar fractions renormalised to input total to account for potentially missing volatiles
-    liq_molar_concentrations.loc[:, components] = liq_molar_concentrations.loc[
-        :, components
-    ].mul(total, axis=0)
-    liq_molar_concentrations["total"] = liq_molar_concentrations.loc[:, components].sum(
-        axis=1
-    )
+
 
     molar_SiO2 = liq_molar_concentrations["SiO2"]
     molar_Na2O = liq_molar_concentrations["Na2O"]
@@ -160,7 +152,7 @@ def KdToplis_iterator(
     # Liquid Fe2+/Fe(total)
     Fe2Fe_total = 1 / (1 + Fe3Fe2)
     # Convert oxides to cations
-    oxide_weights = cc.oxideweights()
+    oxide_weights = cc.oxideweights
     ox_fact = oxide_weights["FeO"] / oxide_weights["MgO"]
     # liquid Fe2+/Mg
     Fe2Mg_liquid = (liquid["FeO"] / liquid["MgO"]) / ox_fact * Fe2Fe_total
@@ -168,7 +160,7 @@ def KdToplis_iterator(
     forsterite_EQ = 1 / (1 + melts["Kd"] * Fe2Mg_liquid)
 
     # Difference between observed Fo and equilibrium Fo
-    forsterite_delta = (forsterite - forsterite_EQ) / forsterite
+    forsterite_delta = abs(forsterite - forsterite_EQ) / forsterite
 
     # iterate until equilibrium forsterite content doesn't change any more
     while sum(forsterite_delta > fo_converge) > 1:
@@ -188,7 +180,7 @@ def KdToplis_iterator(
             1 + melts.loc[iterate, "Kd"] * Fe2Mg_liquid[iterate]
         )
 
-        forsterite_delta.loc[iterate] = (
+        forsterite_delta.loc[iterate] = abs(
             forsterite.loc[iterate] - forsterite_EQ.loc[iterate]
         ) / forsterite.loc[iterate]
 
@@ -259,7 +251,7 @@ def Kd_Blundy_iterator(
     # Liquid Fe2+/Fe(total)
     Fe2Fe_total = 1 / (1 + Fe3Fe2)
     # Convert oxides to cations
-    oxide_weights = cc.oxideweights()
+    oxide_weights = cc.oxideweights
     ox_fact = oxide_weights["FeO"] / oxide_weights["MgO"]
     # liquid Fe2+/Mg
     Fe2Mg_liquid = (liquid["FeO"] / liquid["MgO"]) / ox_fact * Fe2Fe_total
@@ -267,7 +259,7 @@ def Kd_Blundy_iterator(
     forsterite_EQ = 1 / (1 + melts["Kd"] * Fe2Mg_liquid)
 
     # Difference between observed Fo and equilibrium Fo
-    forsterite_delta = (forsterite - forsterite_EQ) / forsterite
+    forsterite_delta = abs(forsterite - forsterite_EQ) / forsterite
 
     # iterate until equilibrium forsterite content doesn't change any more
     while sum(forsterite_delta > fo_converge) > 1:
@@ -284,7 +276,7 @@ def Kd_Blundy_iterator(
             1 + melts.loc[iterate, "Kd"] * Fe2Mg_liquid[iterate]
         )
 
-        forsterite_delta.loc[iterate] = (
+        forsterite_delta.loc[iterate] = abs(
             forsterite.loc[iterate] - forsterite_EQ.loc[iterate]
         ) / forsterite.loc[iterate]
 
@@ -315,7 +307,7 @@ def equilibrium_forsterite(
     Equilibrium forsterite fraction as Mg/(Mg + Fe)
     """
 
-    oxide_weights = cc.oxideweights()
+    oxide_weights = cc.oxideweights
     # Convert oxides to cations
     ox_fact = oxide_weights["FeO"] / oxide_weights["MgO"]
     # liquid Fe3/Fe2
