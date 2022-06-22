@@ -39,12 +39,15 @@ class colors:
 
 
 def layout(
-    fontSize=16,
-    axTitleSize=16,
-    axLabelSize=16,
-    tickLabelSize=12,
     colors=colors.firenze,
+    fontsize=14,
+    **kwargs
 ):
+    axTitleSize=int(fontsize/1.2)
+    axLabelSize=int(fontsize/1.2)
+    tickLabelSize=int(fontsize/1.5)
+    markersize = kwargs.get("markersize", 20)
+    linewidth = kwargs.get("linewidth", 2)
 
     plt.rcParams["figure.constrained_layout.use"] = True
     plt.rcParams["savefig.dpi"] = 300
@@ -52,10 +55,10 @@ def layout(
     plt.rc("figure", figsize=(8, 7), facecolor="white")
 
     # Text
-    plt.rc("font", family="sans-serif", size=fontSize)
+    plt.rc("font", family="sans-serif", size=fontsize)
 
     # Legend
-    plt.rc("legend", fontsize=fontSize / 1.5, fancybox=False, facecolor="white")
+    plt.rc("legend", fontsize=fontsize / 1.5, fancybox=False, facecolor="white")
 
     # Axes
     plt.rc("xtick", direction="in", labelsize=tickLabelSize)
@@ -66,14 +69,14 @@ def layout(
         titlesize=axTitleSize,
         labelsize=axLabelSize,
         axisbelow=True,
-        linewidth=1.5,
         prop_cycle=colors,
         facecolor="whitesmoke",
+        linewidth=1.2
     )
     plt.rc("grid", color="snow")
 
     # Lines
-    plt.rc("lines", linewidth=4, markersize=10, markeredgecolor="k")
+    plt.rc("lines", markersize=markersize, linewidth=linewidth, markeredgecolor="k", **kwargs)
 
 
 def TAS(labels=False, fontsize="medium", **kwargs):
